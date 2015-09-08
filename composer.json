@@ -1,0 +1,23 @@
+{
+    "name"       : "oasis/mlib",
+    "description": "oasis mlib library for PHP",
+    "type"       : "library",
+    "license"    : "proprietary",
+    "authors"    : [
+        {
+            "name" : "Minhao Zhang",
+            "email": "minhao.zhang@qq.com"
+        }
+    ],
+    "require" : {
+        "aws/aws-sdk-php": "^3.3"
+    },
+    "suggest"    : {
+        "aws/aws-sdk-php": "^3.3"
+    },
+    "autoload"   : {
+        "psr-4": {
+            "MLib": "src/"
+        }
+    }
+}
