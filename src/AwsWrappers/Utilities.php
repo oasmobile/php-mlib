@@ -5,7 +5,7 @@
  * Date: 2015-09-08
  * Time: 11:29
  */
-namespace MLib\AwsWrapper;
+namespace Oasis\Mlib\AwsWrapper;
 
 class Utilities
 {

@@ -12,12 +12,9 @@
     "require" : {
         "aws/aws-sdk-php": "^3.3"
     },
-    "suggest"    : {
-        "aws/aws-sdk-php": "^3.3"
-    },
     "autoload"   : {
         "psr-4": {
-            "MLib": "src/"
+            "Oasis\\Mlib": "src/"
         }
     }
 }
