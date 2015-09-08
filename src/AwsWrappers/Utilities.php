@@ -5,11 +5,11 @@
  * Date: 2015-09-08
  * Time: 11:29
  */
-namespace Oasis\Mlib\AwsWrapper;
+namespace Oasis\Mlib\AwsWrappers;
 
 class Utilities
 {
-    static public function formatObjectToRedshiftLine($obj, $fields)
+    static public function formatObjectToRedshiftLine($obj, &$fields)
     {
         $patterns     = [
             "/\\\\/",
