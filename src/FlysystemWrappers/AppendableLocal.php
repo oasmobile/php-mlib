@@ -56,7 +56,8 @@ class AppendableLocal extends Local
     public function appendStream($path)
     {
         $location = $this->applyPathPrefix($path);
-        $stream   = fopen($location, 'a');
+        $this->ensureDirectory(dirname($location));
+        $stream = fopen($location, 'a');
 
         return compact('stream', 'path');
     }

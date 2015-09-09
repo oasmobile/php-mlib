@@ -46,7 +46,6 @@ class AppendableFilesystem extends Filesystem
     public function appendStream($path)
     {
         $path = Util::normalizePath($path);
-        $this->assertPresent($path);
 
         $adapter = $this->getAdapter();
         if (!$adapter instanceof AppendableAdapterInterface) {
