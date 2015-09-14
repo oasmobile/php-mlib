@@ -5,7 +5,7 @@
  * Date: 2015-09-09
  * Time: 21:36
  */
-namespace Oasis\Mlib;
+namespace Oasis\Mlib\Logging;
 
 use Bramus\Monolog\Formatter\ColoredLineFormatter;
 use Bramus\Monolog\Formatter\ColorSchemes\DefaultScheme;
@@ -29,10 +29,20 @@ class Logger
     const ALERT     = MonoLogger::ALERT;
     const EMERGENCY = MonoLogger::EMERGENCY;
 
+    static protected $logToPath               = '';
+    static protected $minLogLevel             = self::DEBUG;
+    static protected $isConsoleHandlerEnabled = false;
     /**
      * @var MonoLogger
      */
     static protected $logger = null;
+
+    /** @var StreamHandler */
+    static protected $console_handler = null;
+    /** @var StreamHandler */
+    static protected $file_handler = null;
+    /** @var FingersCrossedHandler */
+    static protected $error_handler = null;
 
     /**
      * @param string $logToPath     path to store log files
@@ -58,36 +68,48 @@ class Logger
         );
         $colored_formatter->includeStacktraces();
 
-        $ln_processor = "\\Oasis\\Mlib\\Logger::lnProcessor";
+        $ln_processor = "\\Oasis\\Mlib\\Logging\\Logger::lnProcessor";
 
-        $script_name = basename($_SERVER['SCRIPT_FILENAME'], ".php");
-        $fs          = new AppendableFilesystem(new AppendableLocal($logToPath));
-
-        $normal_log_key     = date('Ymd') . "/" . $script_name . ".log";
-        $normal_log_fh      = $fs->appendStream($normal_log_key);
-        $normal_log_handler = new StreamHandler($normal_log_fh, $minLogLevel);
-        $normal_log_handler->setFormatter($line_formatter);
-        $normal_log_handler->pushProcessor($ln_processor);
-
-        $error_log_key     = date('Ymd') . "/" . $script_name . ".error";
-        $error_log_fh      = $fs->appendStream($error_log_key);
-        $error_log_handler = new StreamHandler($error_log_fh, $minLogLevel);
-        $error_log_handler->setFormatter($line_formatter);
-        $error_log_handler->pushProcessor($ln_processor);
-        $auto_error_handler = new FingersCrossedHandler(
-            $error_log_handler,
-            new ErrorLevelActivationStrategy($errorLogLevel)
-        );
+        self::$logToPath   = $logToPath;
+        self::$minLogLevel = $minLogLevel;
 
         self::$logger = new MonoLogger(getmypid());
-        self::$logger->pushHandler($normal_log_handler);
-        self::$logger->pushHandler($auto_error_handler);
 
         if (PHP_SAPI == "cli") {
-            $stdout_handler = new StreamHandler(STDOUT);
-            $stdout_handler->setFormatter($colored_formatter);
-            $stdout_handler->pushProcessor($ln_processor);
-            self::$logger->pushHandler($stdout_handler);
+            self::$console_handler = new StreamHandler(fopen('php://stdout', 'w'), $minLogLevel);
+            self::$console_handler->setFormatter($colored_formatter);
+            self::$console_handler->pushProcessor($ln_processor);
+            self::$logger->pushHandler(self::$console_handler);
+            self::$isConsoleHandlerEnabled = true;
+        }
+
+        if ($logToPath) {
+            try {
+                $fs = new AppendableFilesystem(new AppendableLocal($logToPath));
+
+                $script_name = basename($_SERVER['SCRIPT_FILENAME'], ".php");
+
+                $normal_log_key     = date('Ymd') . "/" . $script_name . ".log";
+                $normal_log_fh      = $fs->appendStream($normal_log_key);
+                self::$file_handler = new StreamHandler($normal_log_fh, $minLogLevel);
+                self::$file_handler->setFormatter($line_formatter);
+                self::$file_handler->pushProcessor($ln_processor);
+                self::$logger->pushHandler(self::$file_handler);
+
+                $error_log_key       = date('Ymd') . "/" . $script_name . ".error";
+                $error_log_fh        = $fs->appendStream($error_log_key);
+                self::$error_handler = new StreamHandler($error_log_fh, $minLogLevel);
+                self::$error_handler->setFormatter($line_formatter);
+                self::$error_handler->pushProcessor($ln_processor);
+                $auto_error_handler = new FingersCrossedHandler(
+                    self::$error_handler,
+                    new ErrorLevelActivationStrategy($errorLogLevel)
+                );
+                self::$logger->pushHandler($auto_error_handler);
+
+            } catch (\LogicException $e) {
+                self::$logger->error($e->getMessage());
+            }
         }
     }
 
@@ -134,7 +156,8 @@ class Logger
     public static function log($level, $msg, $context = [])
     {
         if (!self::$logger instanceof MonoLogger) {
-            throw new \RuntimeException("Logger::init() should be called before using any logging function");
+            //throw new \RuntimeException("Logger::init() should be called before using any logging function");
+            self::init("");
         }
         self::$logger->log($level, $msg, $context);
     }
@@ -167,4 +190,66 @@ class Logger
 
         return $record;
     }
+
+    /**
+     * @return string
+     */
+    public static function getLogToPath()
+    {
+        return self::$logToPath;
+    }
+
+    /**
+     * @return int
+     */
+    public static function getMinLogLevel()
+    {
+        return self::$minLogLevel;
+    }
+
+    /**
+     * @param int $minLogLevel
+     */
+    public static function setMinLogLevel($minLogLevel)
+    {
+        if (self::$console_handler
+            && self::$isConsoleHandlerEnabled
+        ) {
+            self::$console_handler->setLevel($minLogLevel);
+        }
+        if (self::$file_handler) {
+            self::$file_handler->setLevel($minLogLevel);
+        }
+        if (self::$error_handler) {
+            self::$error_handler->setLevel($minLogLevel);
+        }
+        self::$minLogLevel = $minLogLevel;
+    }
+
+    /**
+     * @return boolean
+     */
+    public static function isIsConsoleHandlerEnabled()
+    {
+        return self::$isConsoleHandlerEnabled;
+    }
+
+    /**
+     * @param boolean $isConsoleHandlerEnabled
+     */
+    public static function enableConsoleLog($isConsoleHandlerEnabled = true)
+    {
+        if (self::$isConsoleHandlerEnabled == $isConsoleHandlerEnabled) return;
+        if (!self::$console_handler) return;
+
+        if (self::$isConsoleHandlerEnabled) {
+            self::$console_handler->setLevel(self::EMERGENCY + 1); // biggest and impossible log level
+        }
+        else {
+            self::$console_handler->setLevel(self::$minLogLevel);
+        }
+
+        self::$isConsoleHandlerEnabled = $isConsoleHandlerEnabled;
+    }
+
 }

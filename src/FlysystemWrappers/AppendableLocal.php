@@ -9,6 +9,7 @@ namespace Oasis\Mlib\FlysystemWrappers;
 
 use League\Flysystem\Adapter\Local;
 use League\Flysystem\Config;
+use League\Flysystem\Util;
 
 class AppendableLocal extends Local
     implements AppendableAdapterInterface
@@ -30,24 +31,18 @@ class AppendableLocal extends Local
             return $this->write($path, $contents, $config);
         }
 
-        $location = $this->applyPathPrefix($path);
-
-        $orig     = file_get_contents($location);
-        $contents = $orig . $contents;
-
-        if (($size = file_put_contents($location, $contents, $this->writeFlags)) === false) {
-            return false;
+        $steam_obj = $this->appendStream($path);
+        $fh        = $steam_obj['stream'];
+        if (!is_resource($fh)) {
+            throw new \RuntimeException("Cannot get append stream.");
         }
 
-        $type   = 'file';
-        $result = compact('contents', 'type', 'size', 'path');
+        fwrite($fh, $contents);
+        fclose($fh);
 
-        if ($visibility = $config->get('visibility')) {
-            $result['visibility'] = $visibility;
-            $this->setVisibility($path, $visibility);
-        }
+        $type = 'file';
 
-        return $result;
+        return compact($path, $type);
     }
 
     /**
