@@ -16,7 +16,7 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger as MonoLogger;
 use Oasis\Mlib\FlysystemWrappers\AppendableFilesystem;
 use Oasis\Mlib\FlysystemWrappers\AppendableLocal;
-use Underscore\Types\Strings;
+use Oasis\Mlib\MUtils;
 
 class Logger
 {
@@ -183,7 +183,7 @@ class Logger
                 continue;
             }
             elseif (!$self_encountered) continue;
-            if (!Strings::endsWith($record['message'], "\n")) $record['message'] .= " ";
+            if (!MUtils::stringEndsWith($record['message'], "\n")) $record['message'] .= " ";
             $record['message'] .= "(" . basename($trace['file']) . ":" . $trace['line'] . ")";
             break;
         }

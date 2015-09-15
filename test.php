@@ -8,6 +8,7 @@
  */
 
 use Oasis\Mlib\Logging\Logger;
+use Hoa\String\String;
 
 require_once __DIR__ . "/vendor/autoload.php";
 //Logger::debug(PHP_OS);

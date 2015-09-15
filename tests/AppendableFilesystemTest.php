@@ -10,6 +10,7 @@ namespace Oasis\Mlib\UnitTesting;
 use Oasis\Mlib\FlysystemWrappers\AppendableFilesystem;
 use Oasis\Mlib\FlysystemWrappers\AppendableLocal;
 use PHPUnit_Framework_TestCase;
+use Symfony\Component\Filesystem\Filesystem;
 
 class AppendableFilesystemTest extends PHPUnit_Framework_TestCase
 {
@@ -22,7 +23,7 @@ class AppendableFilesystemTest extends PHPUnit_Framework_TestCase
 
     protected function tearDown()
     {
-        $symfony_fs = new \Symfony\Component\Filesystem\Filesystem();
+        $symfony_fs = new Filesystem();
         if ($symfony_fs->exists($this->tempdir)) {
             $symfony_fs->remove($this->tempdir);
         }
