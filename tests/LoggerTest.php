@@ -1,14 +1,17 @@
 <?php
-use Oasis\Mlib\Logging\Logger;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Finder\Finder;
-
 /**
  * Created by PhpStorm.
  * User: minhao
  * Date: 2015-09-10
  * Time: 20:53
  */
+namespace Oasis\Mlib\UnitTesting;
+
+use Oasis\Mlib\Logging\Logger;
+use PHPUnit_Framework_TestCase;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
+
 class LoggerTest extends PHPUnit_Framework_TestCase
 {
     /**
@@ -85,7 +88,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
 
     public function testErrorLog()
     {
-        $msg = "This is a debug message";
+        $msg    = "This is a debug message";
         $errmsg = "This is an error message";
         Logger::debug($msg);
         Logger::error($errmsg);

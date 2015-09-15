@@ -1,13 +1,16 @@
 <?php
-use Oasis\Mlib\FlysystemWrappers\AppendableFilesystem;
-use Oasis\Mlib\FlysystemWrappers\AppendableLocal;
-
 /**
  * Created by PhpStorm.
  * User: minhao
  * Date: 2015-09-14
  * Time: 17:30
  */
+namespace Oasis\Mlib\UnitTesting;
+
+use Oasis\Mlib\FlysystemWrappers\AppendableFilesystem;
+use Oasis\Mlib\FlysystemWrappers\AppendableLocal;
+use PHPUnit_Framework_TestCase;
+
 class AppendableFilesystemTest extends PHPUnit_Framework_TestCase
 {
     public $tempdir = '';
@@ -20,8 +23,7 @@ class AppendableFilesystemTest extends PHPUnit_Framework_TestCase
     protected function tearDown()
     {
         $symfony_fs = new \Symfony\Component\Filesystem\Filesystem();
-        if ($symfony_fs->exists($this->tempdir))
-        {
+        if ($symfony_fs->exists($this->tempdir)) {
             $symfony_fs->remove($this->tempdir);
         }
     }
