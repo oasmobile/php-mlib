@@ -8,6 +8,9 @@
  */
 namespace Oasis\Mlib\Exceptions\Runtime;
 
+use Exception;
+use RuntimeException;
+
 /**
  * Class InvalidRequestDataException
  *

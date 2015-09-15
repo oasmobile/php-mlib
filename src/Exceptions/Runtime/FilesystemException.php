@@ -8,8 +8,9 @@
 namespace Oasis\Mlib\Exceptions\Runtime;
 
 use Exception;
+use RuntimeException;
 
-class FilesystemException extends \RuntimeException
+class FilesystemException extends RuntimeException
 {
     public function __construct($message = "", $code = 0, Exception $previous = null)
     {
