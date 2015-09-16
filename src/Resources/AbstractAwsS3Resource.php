@@ -17,7 +17,7 @@ use League\Flysystem\AwsS3v3\AwsS3Adapter;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Plugin\ListPaths;
 
-abstract class AwsS3Resource
+abstract class AbstractAwsS3Resource
 {
     public static function getFilesystem()
     {

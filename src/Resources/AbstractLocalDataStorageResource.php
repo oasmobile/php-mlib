@@ -12,7 +12,7 @@ use League\Flysystem\Plugin\ListPaths;
 use Oasis\Mlib\FlysystemWrappers\AppendableFilesystem;
 use Oasis\Mlib\FlysystemWrappers\AppendableLocal;
 
-class LocalDataStorageResource
+class AbstractLocalDataStorageResource
 {
     public static function getFilesystem()
     {
