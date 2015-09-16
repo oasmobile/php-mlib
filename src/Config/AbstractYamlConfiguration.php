@@ -16,6 +16,9 @@ abstract class AbstractYamlConfiguration implements ConfigurationInterface
 {
     protected $processedConfig = [];
 
+    /**
+     * @return static
+     */
     public static function instance()
     {
         static $instances = [];
@@ -47,8 +50,6 @@ abstract class AbstractYamlConfiguration implements ConfigurationInterface
 
     /**
      * Assigns processed config to specific properties
-     *
-     * @return mixed
      */
     abstract public function assignProcessedConfig();
 }
