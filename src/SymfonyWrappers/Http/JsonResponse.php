@@ -14,7 +14,7 @@ class JsonResponse extends \Symfony\Component\HttpFoundation\JsonResponse
 {
     public function prepare(Request $request)
     {
-        set_exception_handler(function (Exception $e) use ($this) {
+        set_exception_handler(function (Exception $e) {
             $this->setStatusCode(self::HTTP_INTERNAL_SERVER_ERROR);
             $this->setData([
                                "rc"      => ($e->getCode() == 0 ? 0xffff : $e->getCode()),
