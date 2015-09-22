@@ -55,7 +55,12 @@ function memergency($msg, $context = [])
     Logger::emergency($msg, $context);
 }
 
-function mtrace(\Exception $e, $logLevel = Logger::INFO)
+function mtrace(\Exception $e, $prompt_string = "", $logLevel = Logger::INFO)
 {
-    Logger::log($logLevel, Logger::getExceptionDebugInfo($e));
+    Logger::log($logLevel, $prompt_string . Logger::getExceptionDebugInfo($e));
+}
+
+function mdump($obj)
+{
+    return print_r($obj, true);
 }

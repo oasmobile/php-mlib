@@ -45,11 +45,15 @@ class Logger
     static protected $error_handler = null;
 
     /**
-     * @param string $logToPath     path to store log files
-     * @param int    $minLogLevel   minimum log level
-     * @param int    $errorLogLevel error level to trigger finger-crossed-handler
+     * @param string $logToPath         path to store log files
+     * @param int    $minLogLevel       minimum log level
+     * @param int    $errorLogLevel     error log level
+     * @param int    $errorTriggerLevel error level to trigger finger-crossed-handler
      */
-    public static function init($logToPath, $minLogLevel = self::DEBUG, $errorLogLevel = self::ERROR)
+    public static function init($logToPath,
+                                $minLogLevel = self::DEBUG,
+                                $errorLogLevel = self::WARNING,
+                                $errorTriggerLevel = self::ERROR)
     {
         $datetime_format = "Ymd-His";
         $output_format   = "[%channel%] %datetime% | %level_name% | %message% %context% %extra%\n";
@@ -73,7 +77,7 @@ class Logger
         self::$logToPath   = $logToPath;
         self::$minLogLevel = $minLogLevel;
 
-        self::$logger = new MonoLogger(getmypid());
+        self::$logger = new MonoLogger('mlib');
 
         if (PHP_SAPI == "cli") {
             self::$console_handler = new StreamHandler(fopen('php://stdout', 'w'), $minLogLevel);
@@ -98,12 +102,15 @@ class Logger
 
                 $error_log_key       = date('Ymd') . "/" . $script_name . ".error";
                 $error_log_fh        = $fs->appendStream($error_log_key);
-                self::$error_handler = new StreamHandler($error_log_fh, $minLogLevel);
+                self::$error_handler = new StreamHandler($error_log_fh, $errorLogLevel);
                 self::$error_handler->setFormatter($line_formatter);
                 self::$error_handler->pushProcessor($ln_processor);
                 $auto_error_handler = new FingersCrossedHandler(
                     self::$error_handler,
-                    new ErrorLevelActivationStrategy($errorLogLevel)
+                    new ErrorLevelActivationStrategy($errorTriggerLevel),
+                    0, /* buffer size, 0 means no limit */
+                    true, /* bubbles */
+                    false /* stop bufferring on strategy activated */
                 );
                 self::$logger->pushHandler($auto_error_handler);
 
@@ -173,7 +180,7 @@ class Logger
             . PHP_EOL;
     }
 
-    public static function lnProcessor($record)
+    public static function lnProcessor(array $record)
     {
         $callStack        = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 12);
         $self_encountered = false;
@@ -182,11 +189,16 @@ class Logger
                 $self_encountered = true;
                 continue;
             }
-            elseif (!$self_encountered) continue;
-            if (!MUtils::stringEndsWith($record['message'], "\n")) $record['message'] .= " ";
+            elseif (!$self_encountered) {
+                continue;
+            }
+            if (!MUtils::stringEndsWith($record['message'], "\n")) {
+                $record['message'] .= " ";
+            }
             $record['message'] .= "(" . basename($trace['file']) . ":" . $trace['line'] . ")";
             break;
         }
+        $record['channel'] = getmypid();
 
         return $record;
     }
@@ -239,8 +251,12 @@ class Logger
      */
     public static function enableConsoleLog($isConsoleHandlerEnabled = true)
     {
-        if (self::$isConsoleHandlerEnabled == $isConsoleHandlerEnabled) return;
-        if (!self::$console_handler) return;
+        if (self::$isConsoleHandlerEnabled == $isConsoleHandlerEnabled) {
+            return;
+        }
+        if (!self::$console_handler) {
+            return;
+        }
 
         if (self::$isConsoleHandlerEnabled) {
             self::$console_handler->setLevel(self::EMERGENCY + 1); // biggest and impossible log level
