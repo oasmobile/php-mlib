@@ -26,7 +26,8 @@ abstract class AbstractAwsS3Resource
         if (!$instances[static::class] instanceof Filesystem) {
             $adapter                  = new AwsS3Adapter(
                 self::getS3Client(),
-                static::getS3Configuration()['bucket']
+                static::getS3Configuration()['bucket'],
+                static::getS3Configuration()['prefix']
             );
             $instances[static::class] = new Filesystem($adapter);
             $instances[static::class]->addPlugin(new ListPaths());
