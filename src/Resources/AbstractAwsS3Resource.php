@@ -79,7 +79,7 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
             $sts    = new StsClient($this->getConfig($key));
             $cmd    = $sts->getCommand("GetSessionToken",
                                        [
-                                           "DurationSeconds" => CarbonInterval::hours(8)->seconds,
+                                           "DurationSeconds" => 8 * 3600,
                                        ]);
             $result = $sts->execute($cmd);
 
