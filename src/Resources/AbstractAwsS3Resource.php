@@ -12,8 +12,8 @@ use Aws\S3\S3Client;
 use Aws\S3\StreamWrapper;
 use Aws\Sts\StsClient;
 use Carbon\Carbon;
-use Carbon\CarbonInterval;
 use League\Flysystem\Filesystem;
+use League\Flysystem\Plugin\ListPaths;
 use Oasis\Mlib\FlysystemWrappers\FixedAwsS3Adapter;
 
 abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
@@ -29,15 +29,16 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
 
     public function createResource($key = '')
     {
-        $config = $this->getConfig($key);
-
+        $config  = $this->getConfig($key);
         $adapter = new FixedAwsS3Adapter(
             $this->getS3Client($key),
             $config['bucket'],
             $config['prefix']
         );
+        $fs      = new Filesystem($adapter);
+        $fs->addPlugin(new ListPaths());
 
-        return new Filesystem($adapter);
+        return $fs;
     }
 
     public function getS3Client($key = '')
