@@ -13,9 +13,9 @@ use Aws\S3\StreamWrapper;
 use Aws\Sts\StsClient;
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
-use League\Flysystem\AwsS3v3\AwsS3Adapter;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Plugin\ListPaths;
+use Oasis\Mlib\FlysystemWrappers\FixedAwsS3Adapter;
 
 abstract class AbstractAwsS3Resource
 {
@@ -24,7 +24,7 @@ abstract class AbstractAwsS3Resource
         /** @var Filesystem[] $instances */
         static $instances = [];
         if (!$instances[static::class] instanceof Filesystem) {
-            $adapter                  = new AwsS3Adapter(
+            $adapter                  = new FixedAwsS3Adapter(
                 self::getS3Client(),
                 static::getS3Configuration()['bucket'],
                 static::getS3Configuration()['prefix']
