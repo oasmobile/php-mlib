@@ -11,7 +11,7 @@ namespace Oasis\Mlib\Resources;
 abstract class AbstractResourcePoolBase implements ResourcePoolInterface
 {
     /**
-     * @var static[]
+     * @var array
      */
     protected $resources = [];
 
