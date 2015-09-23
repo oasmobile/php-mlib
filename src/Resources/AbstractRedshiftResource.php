@@ -8,32 +8,18 @@
 
 namespace Oasis\Mlib\Resources;
 
-use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
-abstract class AbstractRedshiftResource
+abstract class AbstractRedshiftResource extends AbstractResourcePoolBase
 {
-    public static function getFilesystem()
+    public function createResource($key = '')
     {
-        /** @var Filesystem[] $instances */
-        static $instances = [];
-        if (!$instances[static::class] instanceof Connection) {
-            $connectionParams         =
-                static::getRedshiftConfiguration()
-                + [
-                    'driver' => 'pdo_pgsql',
-                ];
-            $instances[static::class] = DriverManager::getConnection($connectionParams);
-        }
+        $connectionParams =
+            $this->getConfig($key)
+            + [
+                'driver' => 'pdo_pgsql',
+            ];
 
-        return $instances[static::class];
-    }
-
-    /**
-     * @return array
-     */
-    protected static function getRedshiftConfiguration()
-    {
-        throw new \LogicException("This method should be overriden");
+        return DriverManager::getConnection($connectionParams);
     }
 }

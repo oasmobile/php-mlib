@@ -8,31 +8,15 @@
 
 namespace Oasis\Mlib\Resources;
 
-use League\Flysystem\Plugin\ListPaths;
 use Oasis\Mlib\FlysystemWrappers\AppendableFilesystem;
 use Oasis\Mlib\FlysystemWrappers\AppendableLocal;
 
-class AbstractLocalDataStorageResource
+abstract class AbstractLocalDataStorageResource extends AbstractResourcePoolBase
 {
-    public static function getFilesystem()
+    public function createResource($key = '')
     {
-        /** @var AppendableFilesystem[] $fileSystems */
-        static $fileSystems = null;
-        if (!$fileSystems[static::class] instanceof AppendableFilesystem) {
-            $adapter                    = new AppendableLocal(static::getLocalDataStoragePath());
-            $fileSystems[static::class] = new AppendableFilesystem($adapter);
-            $fileSystems[static::class]->addPlugin(new ListPaths());
+        $adapter = new AppendableLocal($this->getConfig($key));
 
-        }
-
-        return $fileSystems[static::class];
-    }
-
-    /**
-     * @return string
-     */
-    protected static function getLocalDataStoragePath()
-    {
-        throw new \LogicException("This method should be overriden");
+        return new AppendableFilesystem($adapter);
     }
 }
