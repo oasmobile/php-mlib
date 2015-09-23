@@ -11,6 +11,7 @@ namespace Oasis\Mlib\Resources;
 use League\Flysystem\Plugin\ListPaths;
 use Oasis\Mlib\FlysystemWrappers\AppendableFilesystem;
 use Oasis\Mlib\FlysystemWrappers\AppendableLocal;
+use Symfony\Component\Finder\Finder;
 
 abstract class AbstractLocalDataStorageResource extends AbstractResourcePoolBase
 {
@@ -21,5 +22,18 @@ abstract class AbstractLocalDataStorageResource extends AbstractResourcePoolBase
         $fs->addPlugin(new ListPaths());
 
         return $fs;
+    }
+
+    public function finder($key = '')
+    {
+        /** @var AppendableFilesystem $fs */
+        $fs = $this->getResource($key);
+        /** @var AppendableLocal $adapter */
+        $adapter = $fs->getAdapter();
+
+        $finder = new Finder();
+        $finder->in($adapter->applyPathPrefix(""));
+
+        return $finder;
     }
 }

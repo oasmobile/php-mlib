@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Plugin\ListPaths;
 use Oasis\Mlib\FlysystemWrappers\FixedAwsS3Adapter;
+use Symfony\Component\Finder\Finder;
 
 abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
 {
@@ -91,5 +92,29 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
         }
 
         return $this->credentials[$key]['Credentials'];
+    }
+
+    public function finder($key = '')
+    {
+        static $count = 0;
+        $count++;
+        if (($protocol = array_search($key, $this->registeredWrappers))
+            === false
+        ) {
+            $protocol = "s3-finder-{$count}";
+            $this->registerStreamWrapper($key, $protocol);
+        }
+
+        /** @var Filesystem $fs */
+        $fs = $this->getResource($key);
+        /** @var FixedAwsS3Adapter $adapter */
+        $adapter = $fs->getAdapter();
+
+        $finder = new Finder();
+        $finder->in($protocol . "://"
+                    . $this->getConfig($key)['bucket'] . "/"
+                    . $adapter->applyPathPrefix(""));
+
+        return $finder;
     }
 }
