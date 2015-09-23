@@ -102,7 +102,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
         /** @var \Symfony\Component\Finder\SplFileInfo $path */
         foreach ($finder as $path) {
             $log_content = file_get_contents($path);
-            $this->assertContains($msg, $log_content);
+            $this->assertNotContains($msg, $log_content);
             $this->assertContains($errmsg, $log_content);
             break;
         }

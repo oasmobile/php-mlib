@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "81be84c2f068993e964e4b906a8c2eda",
+    "hash": "a1f7dbf583ab3d15efca7df66a69073c",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.3.5",
+            "version": "3.3.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "bae73eb3673228b95329ecf0a8fd75a262004d66"
+                "reference": "f09d297fd919fadf9b12ac0cbea082a5494e63e9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/bae73eb3673228b95329ecf0a8fd75a262004d66",
-                "reference": "bae73eb3673228b95329ecf0a8fd75a262004d66",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/f09d297fd919fadf9b12ac0cbea082a5494e63e9",
+                "reference": "f09d297fd919fadf9b12ac0cbea082a5494e63e9",
                 "shasum": ""
             },
             "require": {
@@ -80,7 +80,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2015-09-10 19:12:33"
+            "time": "2015-09-17 19:59:34"
         },
         {
             "name": "bramus/ansi-php",
@@ -336,206 +336,24 @@
             "time": "2015-08-15 19:32:36"
         },
         {
-            "name": "hoa/core",
-            "version": "2.15.09.03",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/hoaproject/Core.git",
-                "reference": "305a881847478d635f3cf565fd5e8ef382c21a70"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/hoaproject/Core/zipball/305a881847478d635f3cf565fd5e8ef382c21a70",
-                "reference": "305a881847478d635f3cf565fd5e8ef382c21a70",
-                "shasum": ""
-            },
-            "require": {
-                "ext-spl": "*",
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "hoa/test": "~1.0"
-            },
-            "suggest": {
-                "ext-mbstring": "ext/mbstring must be present (or a third implementation).",
-                "hoa/cli": "To use the `hoa` script."
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Hoa\\Core\\": "."
-                },
-                "files": [
-                    "Core.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Ivan Enderlin",
-                    "email": "ivan.enderlin@hoa-project.net"
-                },
-                {
-                    "name": "Hoa community",
-                    "homepage": "http://hoa-project.net/"
-                }
-            ],
-            "description": "The Hoa\\Core library.",
-            "homepage": "http://hoa-project.net/",
-            "keywords": [
-                "consistency",
-                "core",
-                "data",
-                "event",
-                "library",
-                "listener",
-                "parameter",
-                "protocol"
-            ],
-            "time": "2015-09-03 08:28:53"
-        },
-        {
-            "name": "hoa/string",
-            "version": "2.15.07.28",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/hoaproject/String.git",
-                "reference": "7a2f8fafceeb200fab4ec23c6162c11c977d2d29"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/hoaproject/String/zipball/7a2f8fafceeb200fab4ec23c6162c11c977d2d29",
-                "reference": "7a2f8fafceeb200fab4ec23c6162c11c977d2d29",
-                "shasum": ""
-            },
-            "require": {
-                "hoa/ustring": "~3.0",
-                "php": "<7"
-            },
-            "require-dev": {
-                "hoa/test": "~1.0"
-            },
-            "suggest": {
-                "ext-intl": "To get a better Hoa\\String::toAscii() and Hoa\\String::compareTo()."
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Hoa\\String\\": "."
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Ivan Enderlin",
-                    "email": "ivan.enderlin@hoa-project.net"
-                },
-                {
-                    "name": "Hoa community",
-                    "homepage": "http://hoa-project.net/"
-                }
-            ],
-            "description": "The Hoa\\String library.",
-            "homepage": "http://hoa-project.net/",
-            "keywords": [
-                "library",
-                "search",
-                "string",
-                "unicode"
-            ],
-            "time": "2015-07-28 12:04:40"
-        },
-        {
-            "name": "hoa/ustring",
-            "version": "3.15.08.03",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/hoaproject/Ustring.git",
-                "reference": "261d5bfc53df8e895793d330f0fb96929fca355d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/hoaproject/Ustring/zipball/261d5bfc53df8e895793d330f0fb96929fca355d",
-                "reference": "261d5bfc53df8e895793d330f0fb96929fca355d",
-                "shasum": ""
-            },
-            "require": {
-                "hoa/core": "~2.0"
-            },
-            "require-dev": {
-                "hoa/test": "~1.0"
-            },
-            "suggest": {
-                "ext-iconv": "ext/iconv must be present (or a third implementation) to use Hoa\\Ustring::transcode().",
-                "ext-intl": "To get a better Hoa\\Ustring::toAscii() and Hoa\\Ustring::compareTo()."
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Hoa\\Ustring\\": "."
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Ivan Enderlin",
-                    "email": "ivan.enderlin@hoa-project.net"
-                },
-                {
-                    "name": "Hoa community",
-                    "homepage": "http://hoa-project.net/"
-                }
-            ],
-            "description": "The Hoa\\Ustring library.",
-            "homepage": "http://hoa-project.net/",
-            "keywords": [
-                "library",
-                "search",
-                "string",
-                "unicode"
-            ],
-            "time": "2015-08-03 07:49:50"
-        },
-        {
             "name": "league/flysystem",
-            "version": "1.0.12",
+            "version": "1.0.14",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/flysystem.git",
-                "reference": "7323424a9d39c24e597ed3f2144419dfbb52e086"
+                "reference": "202c7775d959f377e2e302d93e7127c47604438a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/7323424a9d39c24e597ed3f2144419dfbb52e086",
-                "reference": "7323424a9d39c24e597ed3f2144419dfbb52e086",
+                "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/202c7775d959f377e2e302d93e7127c47604438a",
+                "reference": "202c7775d959f377e2e302d93e7127c47604438a",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.4.0"
+            },
+            "conflict": {
+                "league/flysystem-sftp": "<1.0.6"
             },
             "require-dev": {
                 "ext-fileinfo": "*",
@@ -599,20 +417,20 @@
                 "sftp",
                 "storage"
             ],
-            "time": "2015-09-05 12:06:41"
+            "time": "2015-09-22 19:18:28"
         },
         {
             "name": "league/flysystem-aws-s3-v3",
-            "version": "1.0.4",
+            "version": "1.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/flysystem-aws-s3-v3.git",
-                "reference": "e8e27d07bba47d29ca064b5f9dd06273fbaf7f62"
+                "reference": "b201d0020eaa90e64a302abaca34695d1e08864f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/flysystem-aws-s3-v3/zipball/e8e27d07bba47d29ca064b5f9dd06273fbaf7f62",
-                "reference": "e8e27d07bba47d29ca064b5f9dd06273fbaf7f62",
+                "url": "https://api.github.com/repos/thephpleague/flysystem-aws-s3-v3/zipball/b201d0020eaa90e64a302abaca34695d1e08864f",
+                "reference": "b201d0020eaa90e64a302abaca34695d1e08864f",
                 "shasum": ""
             },
             "require": {
@@ -646,7 +464,7 @@
                 }
             ],
             "description": "Flysystem adapter for the AWS S3 SDK v3.x",
-            "time": "2015-07-07 20:11:47"
+            "time": "2015-09-22 18:57:17"
         },
         {
             "name": "league/flysystem-cached-adapter",
@@ -1453,16 +1271,16 @@
         },
         {
             "name": "voku/portable-utf8",
-            "version": "1.6.11",
+            "version": "1.6.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/voku/portable-utf8.git",
-                "reference": "b439026c3672508c69a5d8dd3b9db64d0065bc55"
+                "reference": "7a3b4995d51a53b6e01d62357ffa794e5dffe7a3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/voku/portable-utf8/zipball/b439026c3672508c69a5d8dd3b9db64d0065bc55",
-                "reference": "b439026c3672508c69a5d8dd3b9db64d0065bc55",
+                "url": "https://api.github.com/repos/voku/portable-utf8/zipball/7a3b4995d51a53b6e01d62357ffa794e5dffe7a3",
+                "reference": "7a3b4995d51a53b6e01d62357ffa794e5dffe7a3",
                 "shasum": ""
             },
             "require": {
@@ -1519,7 +1337,7 @@
                 "utf-8",
                 "utf8"
             ],
-            "time": "2015-09-07 08:17:09"
+            "time": "2015-09-21 16:48:54"
         }
     ],
     "packages-dev": [
@@ -1928,16 +1746,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "4.8.7",
+            "version": "4.8.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "dab2ada9e9a503d2ec3c32fe0fb59dea9bdd9dfa"
+                "reference": "73fad41adb5b7bc3a494bb930d90648df1d5e74b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/dab2ada9e9a503d2ec3c32fe0fb59dea9bdd9dfa",
-                "reference": "dab2ada9e9a503d2ec3c32fe0fb59dea9bdd9dfa",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/73fad41adb5b7bc3a494bb930d90648df1d5e74b",
+                "reference": "73fad41adb5b7bc3a494bb930d90648df1d5e74b",
                 "shasum": ""
             },
             "require": {
@@ -1996,7 +1814,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2015-09-14 06:57:22"
+            "time": "2015-09-20 12:56:44"
         },
         {
             "name": "phpunit/phpunit-mock-objects",

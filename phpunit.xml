@@ -5,17 +5,18 @@
         >
     <testsuites>
         <testsuite name="LoggerTestSuite">
-            <file>tests/LoggerTest.php</file>
+            <file>ut/LoggerTest.php</file>
         </testsuite>
         <testsuite name="FlysystemExtensionSuite">
-            <file>tests/AppendableFilesystemTest.php</file>
+            <file>ut/AppendableFilesystemTest.php</file>
+            <file>ut/AwsS3FilesystemTest.php</file>
         </testsuite>
         <testsuite name="DataSuite">
-            <file>tests/DataProviderTest.php</file>
-            <file>tests/DataPackerTest.php</file>
+            <file>ut/DataProviderTest.php</file>
+            <file>ut/DataPackerTest.php</file>
         </testsuite>
         <testsuite name="MUtilsSuite">
-            <file>tests/MUtilsTest.php</file>
+            <file>ut/MUtilsTest.php</file>
         </testsuite>
     </testsuites>
 
