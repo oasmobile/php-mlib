@@ -18,6 +18,9 @@
         <testsuite name="MUtilsSuite">
             <file>ut/MUtilsTest.php</file>
         </testsuite>
+        <testsuite name="Event">
+            <file>ut/EventTest.php</file>
+        </testsuite>
     </testsuites>
 
 </phpunit>
