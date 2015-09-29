@@ -68,7 +68,7 @@ class EventTest extends \PHPUnit_Framework_TestCase
     public function testParent()
     {
         $parent = new DummyEventDispatcher();
-        $this->dummy_dispatcher->setParent($parent);
+        $this->dummy_dispatcher->setParentEventDispatcher($parent);
 
         $this->mocked_subscriber->expects($this->once())
                                 ->method('func')
@@ -78,15 +78,16 @@ class EventTest extends \PHPUnit_Framework_TestCase
         $this->dummy_dispatcher->dispatch('visit');
     }
 
-    public function testParentWithoutBubbling()
+    public function testEventCapturingInsteadOfBubbling()
     {
         $parent = new DummyEventDispatcher();
-        $this->dummy_dispatcher->setParent($parent);
+        $this->dummy_dispatcher->setParentEventDispatcher($parent);
 
-        $this->mocked_subscriber->expects($this->never())
+        $this->mocked_subscriber->expects($this->exactly(2))
                                 ->method('func')
                                 ->with($this->isInstanceOf("Oasis\\Mlib\\Event\\Event"));
 
+        $this->dummy_dispatcher->addEventListener('visit', [$this->mocked_subscriber, 'func']);
         $parent->addEventListener('visit', [$this->mocked_subscriber, 'func']);
         $this->dummy_dispatcher->dispatch(new Event('visit', null, false));
     }
@@ -94,16 +95,18 @@ class EventTest extends \PHPUnit_Framework_TestCase
     public function testParentWhenStoppedInChild()
     {
         $parent = new DummyEventDispatcher();
-        $this->dummy_dispatcher->setParent($parent);
+        $this->dummy_dispatcher->setParentEventDispatcher($parent);
 
         $this->mocked_subscriber->expects($this->never())
                                 ->method('func')
                                 ->with($this->isInstanceOf("Oasis\\Mlib\\Event\\Event"));
 
         $parent->addEventListener('visit', [$this->mocked_subscriber, 'func']);
-        $this->dummy_dispatcher->addEventListener('visit', function(Event $e) {
-            $e->stopPropogation();
-        });
+        $this->dummy_dispatcher->addEventListener(
+            'visit',
+            function (Event $e) {
+                $e->stopPropogation();
+            });
         $this->dummy_dispatcher->dispatch('visit');
     }
 
@@ -114,9 +117,12 @@ class EventTest extends \PHPUnit_Framework_TestCase
                                 ->with($this->isInstanceOf("Oasis\\Mlib\\Event\\Event"));
 
         $this->dummy_dispatcher->addEventListener('visit', [$this->mocked_subscriber, 'func']);
-        $this->dummy_dispatcher->addEventListener('visit', function(Event $e) {
-            $e->stopImmediatePropogation();
-        }, -1);
+        $this->dummy_dispatcher->addEventListener(
+            'visit',
+            function (Event $e) {
+                $e->stopImmediatePropogation();
+            },
+            -1);
         $this->dummy_dispatcher->dispatch('visit');
     }
 }

@@ -42,6 +42,7 @@ class LoggerTest extends PHPUnit_Framework_TestCase
         if (self::$fs->exists($this->log_dir)) {
             self::$fs->remove($this->log_dir);
         }
+        Logger::enableConsoleLog(true);
     }
 
     public function testLogToFile()

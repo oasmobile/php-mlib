@@ -21,6 +21,9 @@
         <testsuite name="Event">
             <file>ut/EventTest.php</file>
         </testsuite>
+        <testsuite name="Task">
+            <file>ut/TaskTest.php</file>
+        </testsuite>
     </testsuites>
 
 </phpunit>

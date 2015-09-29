@@ -57,7 +57,7 @@ function memergency($msg, $context = [])
 
 function mtrace(\Exception $e, $prompt_string = "", $logLevel = Logger::INFO)
 {
-    Logger::log($logLevel, $prompt_string . Logger::getExceptionDebugInfo($e));
+    Logger::log($logLevel, $prompt_string . PHP_EOL . Logger::getExceptionDebugInfo($e));
 }
 
 function mdump($obj)

@@ -6,69 +6,56 @@
  * Date: 2015-09-09
  * Time: 16:22
  */
-use League\Flysystem\Filesystem;
-use Oasis\Mlib\FlysystemWrappers\AppendableLocal;
-use Oasis\Mlib\FlysystemWrappers\AppendableFilesystem;
-use Oasis\Mlib\Resources\AbstractAwsS3Resource;
-use Oasis\Mlib\Resources\AbstractLocalDataStorageResource;
+
+use Oasis\Mlib\Task\LoopTask;
+use Oasis\Mlib\Task\ParallelTask;
+use Oasis\Mlib\Task\SequentialTask;
+use Oasis\Mlib\Task\Task;
 
 require_once __DIR__ . "/vendor/autoload.php";
 
-//class AwsS3Filesystem extends AbstractAwsS3Resource
-//{
-//    /**
-//     * @return Filesystem
-//     */
-//    public static function getFilesystem()
-//    {
-//        return self::instance()->getResource("/tmp");
-//    }
-//
-//    public function getConfig($key = '')
-//    {
-//        return [
-//            "profile" => "adc-s3",
-//            "region"  => "us-east-1",
-//            "version" => "latest",
-//            "bucket"  => "brotsoft-marketing-campaign-data",
-//            "prefix"  => "test/",
-//        ];
-//    }
-//}
-//
-//$finder = AwsS3Filesystem::instance()->finder();
-
-class DataStorageFilesystem extends AbstractLocalDataStorageResource
-{
-    public static function getRealSystemPath($path)
-    {
-
-        /** @var AppendableLocal $adapter */
-        $adapter = self::getFilesystem()->getAdapter();
-
-        return $adapter->applyPathPrefix($path);
-    }
-
-    public static function getFilesystem()
-    {
-        /** @var AppendableFilesystem $fs */
-        $fs = self::instance()->getResource();
-
-        return $fs;
-    }
-
-    public function getConfig($key = '')
-    {
-        return "/tmp";
-    }
+$tasks = [];
+for ($i = 0; $i < 10; ++$i) {
+    $task = new Task(function () use ($i) {
+        mdebug("Task #$i running");
+        //sleep($i);
+        if ($i % 3 == 0) {
+            //throw new \Exception("Failed #$i");
+        }
+    });
+    $task->addEventListener(Task::EVENT_START,
+        function () use ($i) {
+            mdebug("Task #$i started");
+        });
+    $task->addEventListener(Task::EVENT_SUCCESS,
+        function () use ($i) {
+            mdebug("Task #$i ok");
+        });
+    $task->addEventListener(Task::EVENT_ERROR,
+        function () use ($i) {
+            mdebug("Task #$i error");
+        });
+    $task->addEventListener(Task::EVENT_COMPLETE,
+        function () use ($i) {
+            mdebug("Task #$i completed");
+        });
+    $tasks[] = $task;
 }
-$finder = DataStorageFilesystem::instance()->finder();
 
-$finder->path("#sme_data/[0-9]+/[0-9]+#");
+$para = new ParallelTask([
+                             new SequentialTask([
+                                 $tasks[0], $tasks[1], $tasks[2],
+                                                ]),
+                             new SequentialTask([
+                                 $tasks[3], $tasks[4], $tasks[5],
+                                                ]),
+                             new SequentialTask([
+                                 $tasks[6], $tasks[7], $tasks[8],
+                                                ]),
+    ]);
 
-/** @var \Symfony\Component\Finder\SplFileInfo $splinfo */
-foreach ($finder as $splinfo) {
-    mdebug("spl: " . $splinfo);
-    mdebug("path: " . $splinfo->getPathname());
-    mdebug("relative: " . $splinfo->getRelativePathname());
-}
+$loop = new LoopTask(
+    $para
+//new TimeboxedTask($para, 2)
+);
+$loop->run();

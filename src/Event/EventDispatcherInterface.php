@@ -13,12 +13,12 @@ interface EventDispatcherInterface
     /**
      * @return EventDispatcherInterface
      */
-    public function getParent();
+    public function getParentEventDispatcher();
 
     /**
      * @param EventDispatcherInterface $parent
      */
-    public function setParent(EventDispatcherInterface $parent);
+    public function setParentEventDispatcher(EventDispatcherInterface $parent);
 
     /**
      * Dispatches a event
@@ -32,4 +32,6 @@ interface EventDispatcherInterface
     public function addEventListener($name, callable $listener, $priority = 0);
 
     public function removeEventListener($name, callable $listener);
+
+    public function removeAllEventListeners($name = '');
 }

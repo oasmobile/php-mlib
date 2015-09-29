@@ -20,12 +20,12 @@ trait EventDispatcherTrait
     /** @var array */
     protected $eventListeners = [];
 
-    public function getParent()
+    public function getParentEventDispatcher()
     {
         return $this->eventParent;
     }
 
-    public function setParent(EventDispatcherInterface $parent)
+    public function setParentEventDispatcher(EventDispatcherInterface $parent)
     {
         $this->eventParent = $parent;
     }
@@ -36,27 +36,27 @@ trait EventDispatcherTrait
             $event = new Event(strval($event));
         }
 
-        if ($event->getTarget() == null) {
-            /** @noinspection PhpParamsInspection */
-            $event->setTarget($this);
-        }
         /** @noinspection PhpParamsInspection */
-        $event->setCurrentTarget($this);
+        $event->setTarget($this);
 
-        if ($this->eventListeners[$event->getName()]) {
-            foreach ($this->eventListeners[$event->getName()] as $priority => $callbacks) {
-                foreach ($callbacks as $callback) {
-                    call_user_func($callback, $event);
+        $chain = [];
+        /** @var EventDispatcherInterface $dispatcher */
+        $dispatcher = $this;
+        do {
+            $chain[] = $dispatcher;
+        } while ($dispatcher = $dispatcher->getParentEventDispatcher());
 
-                    if ($event->isPropogationStoppedImmediately()) {
-                        return;
-                    }
-                }
-            }
+        if (!$event->doesBubble()) { // this event uses capturing method
+            $chain = array_reverse($chain);
         }
 
-        if ($this->getParent() && $event->doesBubble() && !$event->isPropogationStopped()) {
-            $this->getParent()->dispatch($event);
+        foreach ($chain as $dispatcher) {
+            /** @noinspection PhpUndefinedMethodInspection */
+            $dispatcher->doDispatchEvent($event);
+
+            if ($event->isPropogationStopped()) {
+                break;
+            }
         }
     }
 
@@ -98,6 +98,35 @@ trait EventDispatcherTrait
                     }
                 }
                 $list = $new_list;
+            }
+        }
+    }
+
+    public function removeAllEventListeners($name = '')
+    {
+        foreach ($this->eventListeners as $eventName => &$list)
+        {
+            if ($name == '' || $eventName == $name)
+            {
+                $list = [];
+            }
+        }
+    }
+
+    protected function doDispatchEvent(Event $event)
+    {
+        /** @noinspection PhpParamsInspection */
+        $event->setCurrentTarget($this);
+
+        if ($this->eventListeners[$event->getName()]) {
+            foreach ($this->eventListeners[$event->getName()] as $priority => $callbacks) {
+                foreach ($callbacks as $callback) {
+                    call_user_func($callback, $event);
+
+                    if ($event->isPropogationStoppedImmediately()) {
+                        return;
+                    }
+                }
             }
         }
     }

@@ -16,8 +16,10 @@ class Event
     protected $currentTarget;
 
     protected $name;
-    protected $context;
-    protected $bubbles;
+    protected $context     = null;
+    protected $bubbles     = true;
+    protected $cancellable = true;
+    protected $cancelled   = false;
 
     protected $propogationStopped            = false;
     protected $propogationStoppedImmediately = false;
@@ -25,15 +27,17 @@ class Event
     /**
      * Create an Event object
      *
-     * @param string $name    name of the Event
-     * @param mixed  $context context of the Event
-     * @param bool   $bubbles whether the event should bubble (to parent dispatcher)
+     * @param string $name        name of the Event
+     * @param mixed  $context     context of the Event
+     * @param bool   $bubbles     whether the Event should bubble (to parent dispatcher)
+     * @param bool   $cancellable is the Event cancellable
      */
-    function __construct($name, $context = null, $bubbles = true)
+    function __construct($name, $context = null, $bubbles = true, $cancellable = true)
     {
-        $this->name    = $name;
-        $this->context = $context;
-        $this->bubbles = $bubbles;
+        $this->name        = $name;
+        $this->context     = $context;
+        $this->bubbles     = $bubbles;
+        $this->cancellable = $cancellable;
     }
 
     public function stopImmediatePropogation()
@@ -45,6 +49,25 @@ class Event
     public function stopPropogation()
     {
         $this->propogationStopped = true;
+    }
+
+    public function cancel()
+    {
+        if (!$this->cancellable) {
+            throw new \LogicException("Cancelling an event which is not cancellable!");
+        }
+
+        if (!$this->cancelled) {
+            $this->cancelled = true;
+        }
+    }
+
+    /**
+     * alias of Event::cancel()
+     */
+    public function preventDefault()
+    {
+        $this->cancel();
     }
 
     /**
@@ -117,6 +140,14 @@ class Event
     public function setCurrentTarget($currentTarget)
     {
         $this->currentTarget = $currentTarget;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isCancelled()
+    {
+        return $this->cancelled;
     }
 
 }
