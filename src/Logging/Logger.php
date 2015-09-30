@@ -259,9 +259,11 @@ class Logger
         }
 
         if (self::$isConsoleHandlerEnabled) {
+            //echo "Set to emergent" . PHP_EOL;
             self::$console_handler->setLevel(self::EMERGENCY + 1); // biggest and impossible log level
         }
         else {
+            //echo "Set to min level = " . self::$minLogLevel . PHP_EOL;
             self::$console_handler->setLevel(self::$minLogLevel);
         }
 

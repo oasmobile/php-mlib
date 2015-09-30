@@ -11,6 +11,7 @@ namespace Oasis\Mlib\UnitTesting;
 use Oasis\Mlib\Event\Event;
 use Oasis\Mlib\Logging\Logger;
 use Oasis\Mlib\Task\DelayTask;
+use Oasis\Mlib\Task\DetachedTask;
 use Oasis\Mlib\Task\LoopTask;
 use Oasis\Mlib\Task\ParallelTask;
 use Oasis\Mlib\Task\Runnable;
@@ -24,6 +25,16 @@ class TaskTest extends \PHPUnit_Framework_TestCase
     protected $mock;
     protected $tmpfile;
 
+    public static function setUpBeforeClass()
+    {
+        Logger::enableConsoleLog(false);
+    }
+
+    public static function tearDownAfterClass()
+    {
+        Logger::enableConsoleLog(true);
+    }
+
     protected function setUp()
     {
         $this->tmpfile = tempnam(sys_get_temp_dir(), "tast-test");
@@ -36,13 +47,11 @@ class TaskTest extends \PHPUnit_Framework_TestCase
                                            ])
                               ->getMock();
 
-        Logger::enableConsoleLog(false);
     }
 
     protected function tearDown()
     {
         unlink($this->tmpfile);
-        Logger::enableConsoleLog(true);
     }
 
     public function testSimpleTask()
@@ -210,4 +219,17 @@ class TaskTest extends \PHPUnit_Framework_TestCase
         $para->run();
     }
 
+    public function testDetachedTask()
+    {
+        $task = new Task(function () {
+            sleep(2);
+            file_put_contents($this->tmpfile, 'abc');
+        });
+        $detached = new DetachedTask($task);
+        $detached->run();
+
+        $this->assertEmpty(file_get_contents($this->tmpfile));
+        sleep(3);
+        $this->assertEquals('abc', file_get_contents($this->tmpfile));
+    }
 }
