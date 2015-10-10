@@ -1,0 +1,120 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: minhao
+ * Date: 2015-10-10
+ * Time: 14:24
+ */
+
+namespace Oasis\Mlib\AwsWrappers;
+
+use Aws\Sqs\SqsClient;
+
+class SqsQueue
+{
+    /** @var SqsClient */
+    protected $client;
+    protected $config;
+    protected $url = null;
+    protected $name;
+
+    function __construct($aws_config, $name)
+    {
+        $this->client = new SqsClient($aws_config);
+        $this->config = $aws_config;
+        $this->name   = $name;
+    }
+
+    public function sendMessage($payroll, $delay = 0, $attributes = [])
+    {
+        $args = [
+            "QueueUrl"    => $this->getQueueUrl(),
+            "MessageBody" => $payroll,
+        ];
+        if ($delay) {
+            $args['DelaySeconds'] = $delay;
+        }
+        if ($attributes) {
+            $args['MessageAttributes'] = $attributes;
+        }
+        $result   = $this->client->sendMessage($args);
+        $sent_msg = new SqsSentMessage($result->toArray());
+        $md5      = md5($payroll);
+        if ($result['MD5OfMessageBody'] != $md5) {
+            throw new \RuntimeException("MD5 of payroll is different on sent message!");
+        }
+
+        return $sent_msg;
+    }
+
+    public function receiveMessage($wait = null, $visibility_timeout = null, $metas = [], $message_attributes = [])
+    {
+        $args = [
+            "QueueUrl"            => $this->getQueueUrl(),
+            "MaxNumberOfMessages" => 1,
+        ];
+        if ($wait !== null && is_int($wait)) {
+            $args['WaitTimeSeconds'] = $wait;
+        }
+        if ($visibility_timeout !== null && is_int($visibility_timeout)) {
+            $args['VisibilityTimeout'] = $visibility_timeout;
+        }
+        if ($metas && is_array($metas)) {
+            $args['AttributeNames'] = $metas;
+        }
+        if ($message_attributes && is_array($message_attributes)) {
+            $args['MessageAttributeNames'] = $message_attributes;
+        }
+
+        $result   = $this->client->receiveMessage($args);
+        $messages = $result['Messages'];
+        if (!$messages) {
+            return null;
+        }
+
+        $msg = new SqsReceivedMessage($messages[0]);
+
+        return $msg;
+    }
+
+    public function receiveMessageWithAttributes(array $expected_message_attributes,
+                                                 $wait = null,
+                                                 $visibility_timeout = null,
+                                                 $metas = [])
+    {
+        return $this->receiveMessage($wait, $visibility_timeout, $metas, $expected_message_attributes);
+    }
+
+    public function purge()
+    {
+        $this->client->purgeQueue([
+                                      "QueueUrl" => $this->getQueueUrl(),
+                                  ]);
+    }
+
+    public function deleteMessage(SqsReceivedMessage $msg)
+    {
+        $this->client->deleteMessage([
+                                         "QueueUrl"      => $this->getQueueUrl(),
+                                         "ReceiptHandle" => $msg->getReceiptHandle(),
+                                     ]);
+    }
+
+    public function getQueueUrl()
+    {
+        if (!$this->url) {
+            $result = $this->client->getQueueUrl([
+                                                     "QueueName" => $this->name,
+                                                 ]);
+            if ($result['QueueUrl']) {
+                $this->url = $result['QueueUrl'];
+            }
+            else {
+                throw new \RuntimeException("Cannot find queue url for queue named {$this->name}");
+            }
+        }
+
+        return $this->url;
+    }
+
+}

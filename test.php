@@ -7,55 +7,43 @@
  * Time: 16:22
  */
 
-use Oasis\Mlib\Task\LoopTask;
-use Oasis\Mlib\Task\ParallelTask;
-use Oasis\Mlib\Task\SequentialTask;
-use Oasis\Mlib\Task\Task;
+use Oasis\Mlib\Event\Event;
+use Oasis\Mlib\Task\BackgroundProcessRunner;
+use Oasis\Mlib\Task\BackgroundTask;
 
 require_once __DIR__ . "/vendor/autoload.php";
 
-$tasks = [];
-for ($i = 0; $i < 10; ++$i) {
-    $task = new Task(function () use ($i) {
-        mdebug("Task #$i running");
-        //sleep($i);
-        if ($i % 3 == 0) {
-            //throw new \Exception("Failed #$i");
-        }
-    });
-    $task->addEventListener(Task::EVENT_START,
-        function () use ($i) {
-            mdebug("Task #$i started");
-        });
-    $task->addEventListener(Task::EVENT_SUCCESS,
-        function () use ($i) {
-            mdebug("Task #$i ok");
-        });
-    $task->addEventListener(Task::EVENT_ERROR,
-        function () use ($i) {
-            mdebug("Task #$i error");
-        });
-    $task->addEventListener(Task::EVENT_COMPLETE,
-        function () use ($i) {
-            mdebug("Task #$i completed");
-        });
-    $tasks[] = $task;
+$q = new \Oasis\Mlib\AwsWrappers\SqsQueue([
+                                              "profile" => "minhao",
+                                              "region"  => "us-east-1",
+                                              "version" => "latest",
+                                          ],
+                                          "test-queue");
+
+try {
+    $payroll = "\xffabc";
+    $md5     = md5($payroll);
+    mdebug("Sending payroll md5 = " . $md5);
+    //$q->purge();
+    $sent = $q->sendMessage(base64_encode($payroll),
+                            0,
+                            [
+                                "中国" => [
+                                    'DataType'    => 'String',
+                                    'StringValue' => '就',
+                                ],
+                            ]);
+    var_dump($sent);
+
+    while ($msg = $q->receiveMessageWithAttributes(['中国'])) {
+        var_dump($msg);
+
+        $packed = unpack('H*', base64_decode($msg->getBody()));
+        mdebug(mdump($packed));
+        $q->deleteMessage($msg);
+    }
+} catch (Exception $e) {
+    mtrace($e);
 }
 
-$para = new ParallelTask([
-                             new SequentialTask([
-                                 $tasks[0], $tasks[1], $tasks[2],
-                                                ]),
-                             new SequentialTask([
-                                 $tasks[3], $tasks[4], $tasks[5],
-                                                ]),
-                             new SequentialTask([
-                                 $tasks[6], $tasks[7], $tasks[8],
-                                                ]),
-    ]);
 
-$loop = new LoopTask(
-    $para
-//new TimeboxedTask($para, 2)
-);
-$loop->run();
