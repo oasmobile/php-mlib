@@ -185,7 +185,7 @@ class Logger
         $callStack        = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 12);
         $self_encountered = false;
         foreach ($callStack as $trace) {
-            if ($trace['file'] == __FILE__) {
+            if (dirname($trace['file']) == __DIR__) {
                 $self_encountered = true;
                 continue;
             }
