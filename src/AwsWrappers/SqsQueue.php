@@ -171,4 +171,12 @@ class SqsQueue
         return $this->url;
     }
 
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
 }
