@@ -9,6 +9,7 @@
 namespace Oasis\Mlib\Task;
 
 use Oasis\Mlib\Event\Event;
+use Oasis\Mlib\Logging\Logger;
 
 class Task extends AbstractTask
 {
@@ -46,11 +47,12 @@ class Task extends AbstractTask
                 $this->dispatch(self::EVENT_ERROR);
             }
         } catch (\Exception $e) {
+            mtrace($e, "Exception caught in Task execution.", Logger::DEBUG);
             $evt = new Event(self::EVENT_ERROR, $e);
             $this->dispatch($evt);
-            if (!$evt->isCancelled()) {
-                mtrace($e, "Exception not cancelled in Task execution.");
-            }
+            //if (!$evt->isCancelled()) {
+            //    throw $e;
+            //}
         }
 
         $this->dispatch(self::EVENT_COMPLETE);
