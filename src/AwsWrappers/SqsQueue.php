@@ -47,11 +47,47 @@ class SqsQueue
         return $sent_msg;
     }
 
+    /**
+     * @param int   $wait
+     * @param int   $visibility_timeout
+     * @param array $metas
+     * @param array $message_attributes
+     *
+     * @return SqsReceivedMessage
+     */
     public function receiveMessage($wait = null, $visibility_timeout = null, $metas = [], $message_attributes = [])
     {
+        $ret = $this->receiveMessages(1, $wait, $visibility_timeout, $metas, $message_attributes);
+        if (!$ret) {
+            return null;
+        }
+        else {
+            return $ret[0];
+        }
+    }
+
+    /**
+     * @param int   $max_count
+     * @param int   $wait
+     * @param int   $visibility_timeout
+     * @param array $metas
+     * @param array $message_attributes
+     *
+     * @return SqsReceivedMessage[]
+     */
+    public function receiveMessages($max_count = 1,
+                                    $wait = null,
+                                    $visibility_timeout = null,
+                                    $metas = [],
+                                    $message_attributes = [])
+    {
+        if ($max_count > 10 || $max_count < 1) {
+            throw new \InvalidArgumentException("Max count for SQS message receiving is 10");
+        }
+
         $args = [
             "QueueUrl"            => $this->getQueueUrl(),
-            "MaxNumberOfMessages" => 1,
+            "MaxNumberOfMessages" => $max_count,
         ];
         if ($wait !== null && is_int($wait)) {
             $args['WaitTimeSeconds'] = $wait;
@@ -69,14 +105,26 @@ class SqsQueue
         $result   = $this->client->receiveMessage($args);
         $messages = $result['Messages'];
         if (!$messages) {
-            return null;
+            return [];
         }
 
-        $msg = new SqsReceivedMessage($messages[0]);
+        $ret = [];
+        foreach ($messages as $data) {
+            $msg   = new SqsReceivedMessage($data);
+            $ret[] = $msg;
+        }
 
-        return $msg;
+        return $ret;
     }
 
+    /**
+     * @param array $expected_message_attributes
+     * @param int   $wait
+     * @param int   $visibility_timeout
+     * @param array $metas
+     *
+     * @return SqsReceivedMessage
+     */
     public function receiveMessageWithAttributes(array $expected_message_attributes,
                                                  $wait = null,
                                                  $visibility_timeout = null,
@@ -87,25 +135,31 @@ class SqsQueue
 
     public function purge()
     {
-        $this->client->purgeQueue([
-                                      "QueueUrl" => $this->getQueueUrl(),
-                                  ]);
+        $this->client->purgeQueue(
+            [
+                "QueueUrl" => $this->getQueueUrl(),
+            ]
+        );
     }
 
     public function deleteMessage(SqsReceivedMessage $msg)
     {
-        $this->client->deleteMessage([
-                                         "QueueUrl"      => $this->getQueueUrl(),
-                                         "ReceiptHandle" => $msg->getReceiptHandle(),
-                                     ]);
+        $this->client->deleteMessage(
+            [
+                "QueueUrl"      => $this->getQueueUrl(),
+                "ReceiptHandle" => $msg->getReceiptHandle(),
+            ]
+        );
     }
 
     public function getQueueUrl()
     {
         if (!$this->url) {
-            $result = $this->client->getQueueUrl([
-                                                     "QueueName" => $this->name,
-                                                 ]);
+            $result = $this->client->getQueueUrl(
+                [
+                    "QueueName" => $this->name,
+                ]
+            );
             if ($result['QueueUrl']) {
                 $this->url = $result['QueueUrl'];
             }
