@@ -20,17 +20,21 @@ class TimeboxedTask extends AbstractTask
     {
         $this->task = $task;
         $this->size = $timebox_size_in_seconds;
-        $this->task->addEventListener(Runnable::EVENT_ERROR,
+        $this->task->addEventListener(
+            Runnable::EVENT_ERROR,
             function () {
                 $this->taskFailed = true;
-            });
-        $this->task->addEventListener(Runnable::EVENT_COMPLETE,
+            }
+        );
+        $this->task->addEventListener(
+            Runnable::EVENT_COMPLETE,
             function () {
                 $finish  = time();
                 $elapsed = $finish - $this->start_time;
                 if ($elapsed < $this->size) {
                     $delay = new DelayTask($this->size - $elapsed);
-                    $delay->addEventListener(Runnable::EVENT_COMPLETE,
+                    $delay->addEventListener(
+                        Runnable::EVENT_COMPLETE,
                         function () {
                             if ($this->taskFailed) {
                                 $this->dispatch(self::EVENT_ERROR);
@@ -40,10 +44,22 @@ class TimeboxedTask extends AbstractTask
                             }
 
                             $this->dispatch(self::EVENT_COMPLETE);
-                        });
+                        }
+                    );
                     $delay->run();
                 }
-            });
+                else {
+                    if ($this->taskFailed) {
+                        $this->dispatch(self::EVENT_ERROR);
+                    }
+                    else {
+                        $this->dispatch(self::EVENT_SUCCESS);
+                    }
+
+                    $this->dispatch(self::EVENT_COMPLETE);
+                }
+            }
+        );
     }
 
     public function run()
