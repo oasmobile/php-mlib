@@ -19,6 +19,7 @@ class DetachedTask extends AbstractTask
     
     public function run()
     {
+        $this->dispatch(self::EVENT_START);
         $inner_bg = function () {
             $real_task = new BackgroundTask($this->task);
             $real_task->run();
@@ -27,5 +28,7 @@ class DetachedTask extends AbstractTask
         $outer_bg = new BackgroundTask(new Task($inner_bg));
         $outer_bg->run();
         BackgroundProcessRunner::wait();
+        mdebug("DetachedTask COMPLETE (task started in background, might not finished)");
+        $this->dispatch(self::EVENT_COMPLETE);
     }
 }

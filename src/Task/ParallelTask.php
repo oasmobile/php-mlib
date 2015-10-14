@@ -40,19 +40,26 @@ class ParallelTask extends AbstractTask
         $this->origBacklog = [];
         foreach ($backlog as $runnable) {
             $bgTask = new BackgroundTask($runnable);
-            $bgTask->addEventListener(Runnable::EVENT_START,
+            $bgTask->addEventListener(
+                Runnable::EVENT_START,
                 function () {
                     $this->totalExecuted++;
-                });
-            $bgTask->addEventListener(Runnable::EVENT_SUCCESS,
+                }
+            );
+            $bgTask->addEventListener(
+                Runnable::EVENT_SUCCESS,
                 function () {
                     $this->succeeded++;
-                });
-            $bgTask->addEventListener(Runnable::EVENT_ERROR,
+                }
+            );
+            $bgTask->addEventListener(
+                Runnable::EVENT_ERROR,
                 function () {
                     $this->failed++;
-                });
-            $bgTask->addEventListener(Runnable::EVENT_COMPLETE,
+                }
+            );
+            $bgTask->addEventListener(
+                Runnable::EVENT_COMPLETE,
                 function (Event $e) {
                     $key = array_search($e->getTarget(), $this->runningBackgroundTasks, true);
                     if ($key === false) {
@@ -60,7 +67,8 @@ class ParallelTask extends AbstractTask
                     }
                     array_splice($this->runningBackgroundTasks, $key, 1);
                     $this->startNext();
-                });
+                }
+            );
             $this->origBacklog[] = $bgTask;
         }
         $this->maxConcurrentTask = $maxConcurrentTask;
@@ -78,6 +86,7 @@ class ParallelTask extends AbstractTask
         $this->failed                 = 0;
         $this->totalExecuted          = 0;
 
+        mdebug("ParallelTask START");
         $this->dispatch(self::EVENT_START);
 
         while ($this->startNext()) {
@@ -115,15 +124,19 @@ class ParallelTask extends AbstractTask
 
     protected function finish()
     {
-        mdebug("Parallel task finished running, stats = {$this->succeeded}/{$this->failed}/{$this->totalExecuted}");
+        mdebug(
+            "Parallel task finished running, stats = {$this->succeeded}/{$this->failed}/{$this->totalExecuted} (S/F/T)"
+        );
 
         if ($this->failed > 0) {
+            mdebug("ParallelTask ERROR");
             $this->dispatch(self::EVENT_ERROR);
         }
         elseif ($this->succeeded > 0) {
+            mdebug("ParallelTask SUCCESS");
             $this->dispatch(self::EVENT_SUCCESS);
         }
-
+        mdebug("ParallelTask COMPLETE");
         $this->dispatch(self::EVENT_COMPLETE);
     }
 

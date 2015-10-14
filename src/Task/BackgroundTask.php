@@ -40,6 +40,7 @@ class BackgroundTask extends AbstractTask
             BackgroundProcessRunner::EVENT_START,
             function (Event $e) {
                 $this->isRunning = true;
+                mdebug("Background task START.");
                 $this->dispatch(self::EVENT_START);
             }
         );
@@ -48,12 +49,15 @@ class BackgroundTask extends AbstractTask
             function (Event $e) {
                 $return_code = $e->getContext();
                 if ($return_code == 0 && !$this->isFailed) {
+                    mdebug("Background task SUCCESS.");
                     $this->dispatch(self::EVENT_SUCCESS);
                 }
                 else {
+                    mdebug("Background task ERROR.");
                     $this->dispatch(self::EVENT_ERROR);
                 }
                 $this->isRunning = false;
+                mdebug("Background task COMPLETE.");
                 $this->dispatch(self::EVENT_COMPLETE);
             }
         );

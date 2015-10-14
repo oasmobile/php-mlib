@@ -27,19 +27,26 @@ class LoopTask extends AbstractTask
         $this->count         = $count;
         $this->stop_on_error = $stop_on_error;
 
-        $this->task->addEventListener(Runnable::EVENT_SUCCESS,
+        $this->task->addEventListener(
+            Runnable::EVENT_SUCCESS,
             function () {
                 $this->succeeded++;
-            });
-        $this->task->addEventListener(Runnable::EVENT_ERROR,
+            }
+        );
+        $this->task->addEventListener(
+            Runnable::EVENT_ERROR,
             function () {
                 $this->failed++;
-            });
-        $this->task->addEventListener(Runnable::EVENT_COMPLETE,
+                mdebug("LoopTask child failed. Total failed times = {$this->failed}");
+            }
+        );
+        $this->task->addEventListener(
+            Runnable::EVENT_COMPLETE,
             function () {
                 $this->num_looped++;
-                mdebug("loop = {$this->num_looped}");
-            });
+                //mdebug("loop = {$this->num_looped}");
+            }
+        );
     }
     
     public function run()
@@ -57,12 +64,15 @@ class LoopTask extends AbstractTask
         } while ($this->count == self::ENDLESS || $this->num_looped < $this->count);
 
         if ($this->failed > 0) {
+            mdebug("LoopTask ERROR");
             $this->dispatch(self::EVENT_ERROR);
         }
         elseif ($this->succeeded > 0) {
+            mdebug("LoopTask SUCCESS");
             $this->dispatch(self::EVENT_SUCCESS);
         }
 
+        mdebug("LoopTask COMPLETE");
         $this->dispatch(self::EVENT_COMPLETE);
 
         return;

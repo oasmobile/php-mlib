@@ -33,6 +33,7 @@ class Task extends AbstractTask
     {
         $this->result = null;
 
+        mdebug("Task START");
         $this->dispatch(self::EVENT_START);
 
         try {
@@ -40,16 +41,20 @@ class Task extends AbstractTask
             if ($this->expected_result === null
                 || $this->expected_result === $this->result
             ) {
+                mdebug("Task SUCCESS");
                 $this->dispatch(self::EVENT_SUCCESS);
             }
             else {
+                mdebug("Task ERROR");
                 $this->dispatch(self::EVENT_ERROR);
             }
         } catch (\RuntimeException $e) {
             mtrace($e, "Exception caught in Task execution.", Logger::DEBUG);
+            mdebug("Task ERROR");
             $this->dispatch(self::EVENT_ERROR);
         }
 
+        mdebug("Task COMPLETE");
         $this->dispatch(self::EVENT_COMPLETE);
     }
 

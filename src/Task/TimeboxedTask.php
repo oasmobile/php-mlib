@@ -50,12 +50,15 @@ class TimeboxedTask extends AbstractTask
                 }
                 else {
                     if ($this->taskFailed) {
+                        mdebug("TimeboxedTask ERROR");
                         $this->dispatch(self::EVENT_ERROR);
                     }
                     else {
+                        mdebug("TimeboxedTask SUCCESS");
                         $this->dispatch(self::EVENT_SUCCESS);
                     }
 
+                    mdebug("TimeboxedTask COMPLETE");
                     $this->dispatch(self::EVENT_COMPLETE);
                 }
             }
@@ -66,6 +69,7 @@ class TimeboxedTask extends AbstractTask
     {
         $this->start_time = time();
         $this->taskFailed = false;
+        mdebug("TimeboxedTask START");
         $this->dispatch(Runnable::EVENT_START);
         $this->task->run();
     }
