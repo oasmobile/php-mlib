@@ -19,6 +19,8 @@ trait EventDispatcherTrait
     protected $eventParent = null;
     /** @var array */
     protected $eventListeners = [];
+    /** @var EventDispatcherInterface */
+    protected $delegateDispatcher = null;
 
     public function getParentEventDispatcher()
     {
@@ -34,6 +36,12 @@ trait EventDispatcherTrait
     {
         if (!$event instanceof Event) {
             $event = new Event(strval($event));
+        }
+
+        if ($this->delegateDispatcher instanceof EventDispatcherInterface)
+        {
+            $this->delegateDispatcher->dispatch($event);
+            return;
         }
 
         /** @noinspection PhpParamsInspection */
@@ -104,13 +112,19 @@ trait EventDispatcherTrait
 
     public function removeAllEventListeners($name = '')
     {
-        foreach ($this->eventListeners as $eventName => &$list)
-        {
-            if ($name == '' || $eventName == $name)
-            {
+        foreach ($this->eventListeners as $eventName => &$list) {
+            if ($name == '' || $eventName == $name) {
                 $list = [];
             }
         }
+    }
+
+    /**
+     * @param EventDispatcherInterface|null $delegateDispatcher
+     */
+    public function setDelegateDispatcher($delegateDispatcher)
+    {
+        $this->delegateDispatcher = $delegateDispatcher;
     }
 
     protected function doDispatchEvent(Event $event)

@@ -7,43 +7,36 @@
  * Time: 16:22
  */
 
-use Oasis\Mlib\Event\Event;
-use Oasis\Mlib\Task\BackgroundProcessRunner;
-use Oasis\Mlib\Task\BackgroundTask;
+use Oasis\Mlib\Task\ParallelTask;
+use Oasis\Mlib\Task\Runnable;
+use Oasis\Mlib\Task\Task;
 
 require_once __DIR__ . "/vendor/autoload.php";
 
-$q = new \Oasis\Mlib\AwsWrappers\SqsQueue([
-                                              "profile" => "minhao",
-                                              "region"  => "us-east-1",
-                                              "version" => "latest",
-                                          ],
-                                          "test-queue");
-
-try {
-    $payroll = "\xffabc";
-    $md5     = md5($payroll);
-    mdebug("Sending payroll md5 = " . $md5);
-    //$q->purge();
-    $sent = $q->sendMessage(base64_encode($payroll),
-                            0,
-                            [
-                                "中国" => [
-                                    'DataType'    => 'String',
-                                    'StringValue' => '就',
-                                ],
-                            ]);
-    var_dump($sent);
-
-    while ($msg = $q->receiveMessageWithAttributes(['中国'])) {
-        var_dump($msg);
-
-        $packed = unpack('H*', base64_decode($msg->getBody()));
-        mdebug(mdump($packed));
-        $q->deleteMessage($msg);
+$task  = new Task(
+    function () {
+        throw new Exception("Some exception");
     }
-} catch (Exception $e) {
-    mtrace($e);
-}
+);
+$task2 = new Task(
+    function () {
+        throw new RuntimeException("Some runtime exception");
+    }
+);
 
+$task->addEventListener(
+    Runnable::EVENT_ERROR, function(){
+    mdebug("task error");
+});
+$task2->addEventListener(
+    Runnable::EVENT_ERROR, function(){
+    mdebug("task2 error");
+});
 
+$paraTask = new ParallelTask(
+    [
+        $task,
+        $task2,
+    ]
+);
+$paraTask->run();

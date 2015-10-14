@@ -26,6 +26,8 @@ class BackgroundProcessRunner implements EventDispatcherInterface
     protected $runnable;
     /** @var int child process id */
     protected $child_pid;
+    /** @var InterProcessEventDelegator */
+    protected $delegator;
 
     function __construct(Runnable $runnable)
     {
@@ -51,6 +53,7 @@ class BackgroundProcessRunner implements EventDispatcherInterface
     public static function wait($waitpid = -1, $hangs = true, $check_interval_in_millisenconds = 100)
     {
         while (true) {
+
             $status = 0;
             $pid    = pcntl_waitpid($waitpid, $status, WNOHANG);
 
@@ -62,6 +65,8 @@ class BackgroundProcessRunner implements EventDispatcherInterface
                 if (array_key_exists($pid, self::$running_runners)) { // find runner
                     $runner = self::$running_runners[$pid];
                     unset(self::$running_runners[$pid]);
+
+                    $runner->delegator->poll();
                     mdebug("Child process #$pid finished running, returns $return_code");
                     $runner->dispatch(new Event(self::EVENT_EXIT, $return_code));
                 }
@@ -88,6 +93,7 @@ class BackgroundProcessRunner implements EventDispatcherInterface
             }
 
             usleep($check_interval_in_millisenconds * 1000);
+
         }
     }
 
@@ -110,22 +116,22 @@ class BackgroundProcessRunner implements EventDispatcherInterface
 
     public function start()
     {
-        $pid = pcntl_fork();
+        $this->delegator = new InterProcessEventDelegator($this->runnable);
+        $pid             = pcntl_fork();
         if ($pid < 0) {
-            throw new \RuntimeException("Error creating forked process, reason = "
-                                        . pcntl_strerror(pcntl_get_last_error()));
+            throw new \RuntimeException(
+                "Error creating forked process, reason = "
+                . pcntl_strerror(pcntl_get_last_error())
+            );
         }
         elseif ($pid == 0) {
+            $this->delegator->activateInChildProcess();
             try {
-                $this->runnable->addEventListener(Runnable::EVENT_ERROR,
-                    function () {
-                        merror("Background task dispatches ERROR event.");
-                        exit(-1);
-                    });
                 $this->runnable->run();
                 exit(0);
             } catch (\Exception $e) {
                 mtrace($e, "Runnable throws uncaught exception.");
+                $this->runnable->dispatch(Runnable::EVENT_ERROR);
                 exit(-1);
             }
             // should not come here

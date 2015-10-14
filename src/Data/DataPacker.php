@@ -10,13 +10,19 @@ namespace Oasis\Mlib\Data;
 
 class DataPacker
 {
+    protected $stream;
+    protected $buffer       = '';
     protected $serializer   = "igbinary_serialize";
     protected $unserializer = "igbinary_unserialize";
 
     function __construct($serializer = null, $unserializer = null)
     {
-        if (is_callable($serializer)) $this->serializer = $serializer;
-        if (is_callable($unserializer)) $this->unserializer = $unserializer;
+        if (is_callable($serializer)) {
+            $this->serializer = $serializer;
+        }
+        if (is_callable($unserializer)) {
+            $this->unserializer = $unserializer;
+        }
     }
 
     public function pack($dataObject)
@@ -28,10 +34,14 @@ class DataPacker
         return $header . $serialized;
     }
 
-    public function packToStream($fh, $dataObject)
+    public function packToStream($dataObject)
     {
+        if (!is_resource($this->stream)) {
+            throw new \RuntimeException("Stream not ready when writing to it");
+        }
+
         $data = $this->pack($dataObject);
-        fwrite($fh, $data);
+        fwrite($this->stream, $data);
     }
 
     public function unpack($data)
@@ -41,7 +51,9 @@ class DataPacker
         $len      = $unpacked['len'];
         $payroll  = substr($data, 4);
         if ($len != strlen($payroll)) {
-            throw new \UnexpectedValueException("Data to be unpacked has different length than what is specified in header.");
+            throw new \UnexpectedValueException(
+                "Data to be unpacked has different length than what is specified in header."
+            );
         }
 
         $unserialized = call_user_func($this->unserializer, $payroll);
@@ -49,33 +61,53 @@ class DataPacker
         return $unserialized;
     }
 
-    public function unpackFromStream($fh)
+    public function unpackFromStream()
     {
-        $header = fread($fh, 4);
-        if ($header === false) {
-
-            throw new \UnexpectedValueException("Cannot read header from stream");
+        $header = $this->readFromStream(4);
+        if ($header == '') {
+            return null;
         }
-        if (strlen($header) < 4) return false;
 
         $unpacked = unpack('Nlen', $header);
         $len      = $unpacked['len'];
-        $payroll  = '';
-        while ($len > 0 && !feof($fh)) {
-            $buffer = fread($fh, $len);
-            if ($buffer === false) {
-                throw new \UnexpectedValueException("Cannot read payroll data from stream");
-            }
-            $payroll .= $buffer;
-            $len -= strlen($buffer);
-        }
-
-        if ($len > 0) {
-            throw new \UnexpectedValueException("Not sufficient data in stream");
+        $payroll  = $this->readFromStream($len);
+        if ($payroll == '') {
+            return null;
         }
 
         $unserialized = call_user_func($this->unserializer, $payroll);
 
         return $unserialized;
+    }
+
+    public function attachStream($stream)
+    {
+        $this->stream = $stream;
+        $this->buffer = '';
+    }
+
+    protected function readFromStream($maxSize)
+    {
+        if (!is_resource($this->stream))
+        {
+            throw new \RuntimeException("Stream not ready when reading from it");
+        }
+
+        while (strlen($this->buffer) < $maxSize) {
+            $local_buf = fread($this->stream, $maxSize);
+            if ($local_buf === false) {
+                throw new \UnexpectedValueException("Cannot read data from stream");
+            }
+            elseif ($local_buf === '') {
+                return '';
+            }
+            $this->buffer .= $local_buf;
+        }
+
+        $ret          = substr($this->buffer, 0, $maxSize);
+        $this->buffer = substr($this->buffer, $maxSize);
+
+        return $ret;
+
     }
 }

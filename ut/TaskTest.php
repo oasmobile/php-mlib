@@ -82,7 +82,7 @@ class TaskTest extends \PHPUnit_Framework_TestCase
     public function testSimpleTaskFailed()
     {
         $task = new Task(function () {
-            throw new \Exception("some error");
+            throw new \RuntimeException("some error");
         });
         $task->addEventListener(Runnable::EVENT_ERROR,
             function (Event $e) {
@@ -190,7 +190,7 @@ class TaskTest extends \PHPUnit_Framework_TestCase
             function () use ($start) {
                 $end     = microtime(true);
                 $elapsed = $end - $start;
-                $this->assertEquals(3, $elapsed, 'Parallel task execution time', 0.1);
+                $this->assertEquals(3, $elapsed, 'Parallel task execution time', 0.2);
             });
         $para->run();
     }
@@ -214,7 +214,7 @@ class TaskTest extends \PHPUnit_Framework_TestCase
             function () use ($start) {
                 $end     = microtime(true);
                 $elapsed = $end - $start;
-                $this->assertEquals(4, $elapsed, 'Parallel task execution time', 0.1);
+                $this->assertEquals(4, $elapsed, 'Parallel task execution time', 0.3);
             });
         $para->run();
     }

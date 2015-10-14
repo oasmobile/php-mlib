@@ -34,4 +34,6 @@ interface EventDispatcherInterface
     public function removeEventListener($name, callable $listener);
 
     public function removeAllEventListeners($name = '');
+
+    public function setDelegateDispatcher($delegate);
 }

@@ -41,14 +41,17 @@ class DataPackerTest extends PHPUnit_Framework_TestCase
 
         $packer = new DataPacker();
         $fh     = fopen($this->tmpfile, 'w');
-        $packer->packToStream($fh, $obj);
-        $packer->packToStream($fh, $obj);
-        $packer->packToStream($fh, $obj);
+        $packer->attachStream($fh);
+
+        $packer->packToStream($obj);
+        $packer->packToStream($obj);
+        $packer->packToStream($obj);
         fclose($fh);
 
         $fh    = fopen($this->tmpfile, 'r');
+        $packer->attachStream($fh);
         $count = 0;
-        while ($obj = $packer->unpackFromStream($fh)) {
+        while ($obj = $packer->unpackFromStream()) {
             $this->assertInstanceOf(Local::class, $obj);
             $count++;
         }
