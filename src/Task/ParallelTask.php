@@ -56,6 +56,7 @@ class ParallelTask extends AbstractTask
                 Runnable::EVENT_ERROR,
                 function () {
                     $this->failed++;
+                    mwarning("There is one bgTask failed for during parallel running. Total failed = {$this->failed}");
                 }
             );
             $bgTask->addEventListener(
