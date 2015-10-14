@@ -12,6 +12,8 @@ use Oasis\Mlib\Event\Event;
 
 class ParallelTask extends AbstractTask
 {
+    const EVENT_TASK_DEAD = "task_dead";
+
     const NO_LIMIT = -1;
 
     /** @var BackgroundTask[] */
@@ -38,7 +40,7 @@ class ParallelTask extends AbstractTask
         }
 
         $this->origBacklog = [];
-        foreach ($backlog as $runnable) {
+        foreach ($backlog as $k => $runnable) {
             $bgTask = new BackgroundTask($runnable);
             $bgTask->addEventListener(
                 Runnable::EVENT_START,
@@ -54,9 +56,14 @@ class ParallelTask extends AbstractTask
             );
             $bgTask->addEventListener(
                 Runnable::EVENT_ERROR,
-                function () {
+                function (Event $e) {
+                    $key = array_search($e->getTarget(), $this->origBacklog, true);
                     $this->failed++;
-                    mwarning("There is one bgTask failed for during parallel running. Total failed = {$this->failed}");
+                    mwarning(
+                        "There is one bgTask (key = $key) failed for during parallel running. "
+                        . "Total failed = {$this->failed}"
+                    );
+                    $this->dispatch(new Event(self::EVENT_TASK_DEAD, $key));
                 }
             );
             $bgTask->addEventListener(
@@ -70,7 +77,7 @@ class ParallelTask extends AbstractTask
                     $this->startNext();
                 }
             );
-            $this->origBacklog[] = $bgTask;
+            $this->origBacklog[$k] = $bgTask;
         }
         $this->maxConcurrentTask = $maxConcurrentTask;
     }

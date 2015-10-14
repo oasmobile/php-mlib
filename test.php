@@ -35,7 +35,7 @@ $task2->addEventListener(
 
 $paraTask = new ParallelTask(
     [
-        $task,
+        "mytask" => $task,
         $task2,
     ]
 );
