@@ -66,7 +66,7 @@ class TimeboxedTask extends AbstractTask
     {
         $this->start_time = time();
         $this->taskFailed = false;
-
+        $this->dispatch(Runnable::EVENT_START);
         $this->task->run();
     }
 }
