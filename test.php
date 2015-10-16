@@ -7,36 +7,14 @@
  * Time: 16:22
  */
 
-use Oasis\Mlib\Task\ParallelTask;
-use Oasis\Mlib\Task\Runnable;
-use Oasis\Mlib\Task\Task;
+use Oasis\Mlib\Cli\CommandLineArgParser;
 
 require_once __DIR__ . "/vendor/autoload.php";
 
-$task  = new Task(
-    function () {
-        throw new Exception("Some exception");
-    }
-);
-$task2 = new Task(
-    function () {
-        throw new RuntimeException("Some runtime exception");
-    }
-);
+$clap = CommandLineArgParser::parser()
+                            ->add('o')->aliasTo('output')->requiresValue()->usage('just output fjelkjlkj kldfjdlkjflkl fjfkdjfklf ldf dkfjdkfd kfjdkfdkfjkdlsjklf')->end()
+                            ->add('p')->cannotBeFollowed()->isMandatory()->end()
+                            ->add('java')->hasDefaultValue('script')->end()
+                            ->run();
+$clap->debug();
 
-$task->addEventListener(
-    Runnable::EVENT_ERROR, function(){
-    mdebug("task error");
-});
-$task2->addEventListener(
-    Runnable::EVENT_ERROR, function(){
-    mdebug("task2 error");
-});
-
-$paraTask = new ParallelTask(
-    [
-        "mytask" => $task,
-        $task2,
-    ]
-);
-$paraTask->run();

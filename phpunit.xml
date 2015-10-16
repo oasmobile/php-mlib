@@ -24,6 +24,9 @@
         <testsuite name="Task">
             <file>ut/TaskTest.php</file>
         </testsuite>
+        <testsuite name="Cli">
+            <file>ut/CommandLineArgParserTest.php</file>
+        </testsuite>
     </testsuites>
 
 </phpunit>
