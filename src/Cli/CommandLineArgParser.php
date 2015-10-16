@@ -268,14 +268,25 @@ NOHELP;
                 $ret .= PHP_EOL . "  " . str_repeat(" ", $break_at);
             }
 
-            $desc               = $option->getDescription();
-            $desc               = $desc ? : "Undocumented parameter";
+            $desc = $option->getDescription();
+            $desc = $desc ? : "Undocumented parameter. ";
+            if ($option->getDefaultValue() !== null) {
+                $dval = $option->getDefaultValue();
+                $desc .= " (Default: ";
+                $desc .= is_bool($dval)
+                    ? ($dval ? "true" : "false")
+                    : $dval;
+                $desc .= ")";
+            }
+            if (!$option->isOptionalOption()) {
+                $desc .= " (Mandatory)";
+            }
             $current_line_count = 0;
             while (strlen($desc) > 0) {
                 $c    = $desc[0];
                 $desc = substr($desc, 1);
                 if ($current_line_count + $break_at > $col_width
-                    && !preg_match('/[a-zA-Z0-9]/', $c)
+                    && !preg_match('/[a-zA-Z0-9\\(]/', $c)
                 ) {
                     $current_line_count = 0;
                     $ret .= $c;
@@ -285,9 +296,7 @@ NOHELP;
                 $ret .= $c;
                 $current_line_count++;
             }
-            if (!$option->isOptionalOption()) {
-                $ret .= " (Mandatory)";
-            }
+
             $ret .= PHP_EOL;
         }
 

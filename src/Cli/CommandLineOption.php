@@ -203,4 +203,12 @@ class CommandLineOption
     {
         return $this->name;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getDefaultValue()
+    {
+        return $this->defaultValue;
+    }
 }
