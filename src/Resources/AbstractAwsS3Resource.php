@@ -55,11 +55,11 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
 
     public function registerStreamWrapper($key = '', $protocol = "s3")
     {
-        if ($this->registeredWrappers[$protocol] === $key) {
-            return true;
-        }
-
         if (isset($this->registeredWrappers[$protocol])) {
+            if ($this->registeredWrappers[$protocol] === $key) {
+                return true;
+            }
+
             throw new \RuntimeException("Protocol $protocol:// is already registered to another s3 resource <$key>");
         }
 
@@ -79,10 +79,12 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
             || $this->credentials[$key]['expireAt'] < $minExpireAt->getTimestamp()
         ) {
             $sts    = new StsClient($this->getConfig($key));
-            $cmd    = $sts->getCommand("GetSessionToken",
-                                       [
-                                           "DurationSeconds" => 8 * 3600,
-                                       ]);
+            $cmd    = $sts->getCommand(
+                "GetSessionToken",
+                [
+                    "DurationSeconds" => 8 * 3600,
+                ]
+            );
             $result = $sts->execute($cmd);
 
             $this->credentials[$key] = [
@@ -111,9 +113,11 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
         $adapter = $fs->getAdapter();
 
         $finder = new Finder();
-        $finder->in($protocol . "://"
-                    . $this->getConfig($key)['bucket'] . "/"
-                    . $adapter->applyPathPrefix(""));
+        $finder->in(
+            $protocol . "://"
+            . $this->getConfig($key)['bucket'] . "/"
+            . $adapter->applyPathPrefix("")
+        );
 
         return $finder;
     }
