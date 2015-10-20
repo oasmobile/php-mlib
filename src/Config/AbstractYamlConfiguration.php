@@ -7,28 +7,11 @@
  */
 namespace Oasis\Mlib\Config;
 
-use Symfony\Component\Config\Definition\ConfigurationInterface;
-use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Yaml\Yaml;
 
-abstract class AbstractYamlConfiguration implements ConfigurationInterface
+abstract class AbstractYamlConfiguration extends AbstractConfiguration
 {
-    protected $processedConfig = [];
-
-    /**
-     * @return static
-     */
-    public static function instance()
-    {
-        static $instances = [];
-        if ($instances[static::class] === null) {
-            $instances[static::class] = new static();
-        }
-
-        return $instances[static::class];
-    }
-
     public function loadYaml($filename, $directories)
     {
         $locator   = new FileLocator($directories);
@@ -40,16 +23,7 @@ abstract class AbstractYamlConfiguration implements ConfigurationInterface
             $rawData[] = $config;
         }
 
-        $defProcessor          = new Processor();
-        $this->processedConfig = $defProcessor->processConfiguration($this, $rawData);
-
-        $this->assignProcessedConfig();
+        $this->processConfigArray($rawData);
     }
 
-    abstract public function getConfigTreeBuilder();
-
-    /**
-     * Assigns processed config to specific properties
-     */
-    abstract public function assignProcessedConfig();
 }
