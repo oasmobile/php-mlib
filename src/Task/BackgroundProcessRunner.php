@@ -58,7 +58,10 @@ class BackgroundProcessRunner implements EventDispatcherInterface
             $pid    = pcntl_waitpid($waitpid, $status, WNOHANG);
 
             if ($pid == 0) { // no child process has quit
-                continue;
+                if (!$hangs) {
+                    break;
+                }
+                usleep($check_interval_in_millisenconds * 1000);
             }
             else if ($pid > 0) { // child process with pid = $pid exits
                 $return_code = pcntl_wexitstatus($status);
@@ -72,7 +75,6 @@ class BackgroundProcessRunner implements EventDispatcherInterface
                 }
                 else {
                     mwarning("Process #$pid is not handled by <" . get_called_class() . ">");
-                    continue;
                 }
             }
             else { // error
@@ -87,13 +89,6 @@ class BackgroundProcessRunner implements EventDispatcherInterface
                     throw new \RuntimeException("Error waiting for process, error = " . pcntl_strerror($errno));
                 }
             }
-
-            if (!$hangs) {
-                break;
-            }
-
-            usleep($check_interval_in_millisenconds * 1000);
-
         }
     }
 
