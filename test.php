@@ -7,14 +7,37 @@
  * Time: 16:22
  */
 
-use Oasis\Mlib\Cli\CommandLineArgParser;
+use Oasis\Mlib\AwsWrappers\DynamoDbItem;
+use Oasis\Mlib\AwsWrappers\DynamoDbTable;
 
 require_once __DIR__ . "/vendor/autoload.php";
 
-$clap = CommandLineArgParser::parser()
-                            ->add('o')->aliasTo('output')->requiresValue()->usage('just output fjelkjlkj kldfjdlkjflkl fjfkdjfklf ldf dkfjdkfd kfjdkfdkfjkdlsjklf')->end()
-                            ->add('p')->cannotBeFollowed()->isMandatory()->end()
-                            ->add('java')->hasDefaultValue('script')->end()
-                            ->run();
-$clap->debug();
+$config = [
+    "profile" => "minhao",
+    "region"  => "us-east-1",
+    "version" => "latest",
+];
+$table  = "egg-user-task-info";
+$types  = [
+    "uuid"         => DynamoDbItem::ATTRIBUTE_TYPE_STRING,
+    "taskid"       => DynamoDbItem::ATTRIBUTE_TYPE_NUMBER,
+    "completed_at" => DynamoDbItem::ATTRIBUTE_TYPE_NUMBER,
+];
 
+$db = new DynamoDbTable($config, $table, $types);
+$db->setCasField("completed_at");
+
+//$obj = [
+//    "uuid"         => 123,
+//    "taskid"       => 11,
+//    "version"      => 1,
+//    "completed_at" => time(),
+//    "name"         => null,
+//    "is_student"   => true,
+//];
+//$db->set($obj);
+
+$obj = $db->get(['uuid' => 123, 'taskid' => 11]);
+$obj['name'] = "jason";
+$obj['completed_at'] = time();
+$db->set($obj, true);
