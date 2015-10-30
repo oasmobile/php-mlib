@@ -37,7 +37,9 @@ $db->setCasField("completed_at");
 //];
 //$db->set($obj);
 
-$obj = $db->get(['uuid' => 123, 'taskid' => 11]);
-$obj['name'] = "jason";
-$obj['completed_at'] = time();
-$db->set($obj, true);
+//$obj = $db->get(['uuid' => 123, 'taskid' => 11]);
+//$obj['name'] = "jason";
+//$obj['completed_at'] = time();
+//$db->set($obj, true);
+
+$db->delete(['uuid' => 123, 'taskid' => 77]);

@@ -30,15 +30,16 @@ class DynamoDbTable
     protected $config;
 
     protected $table_name;
-    protected $cas_field       = null;
+    protected $cas_field       = '';
     protected $attribute_types = [];
 
-    function __construct(array $aws_config, $table_name, $attribute_types = [])
+    function __construct(array $aws_config, $table_name, $attribute_types = [], $cas_field = '')
     {
-        $this->db_client       = new DynamoDbClient($aws_config);
         $this->config          = $aws_config;
+        $this->db_client       = new DynamoDbClient($this->config);
         $this->table_name      = $table_name;
         $this->attribute_types = $attribute_types;
+        $this->cas_field       = $cas_field;
     }
 
     public function setAttributeType($name, $type)
@@ -89,7 +90,6 @@ class DynamoDbTable
         $params['Item'] = $item->getData();
 
         try {
-            var_dump($params);
             $this->db_client->putItem($params);
         } catch (DynamoDbException $e) {
             if ($e->getAwsErrorCode() == "ConditionalCheckFailedException") {
@@ -112,12 +112,13 @@ class DynamoDbTable
     {
         $keyItem = DynamoDbItem::createFromArray($keys, $this->attribute_types);
 
-        $this->db_client->deleteItem(
-            [
-                "TableName" => $this->table_name,
-                "Key"       => $keyItem->getData(),
-            ]
-        );
+        $params = [
+            "TableName" => $this->table_name,
+            "Key"       => $keyItem->getData(),
+        ];
+
+        $result = $this->db_client->deleteItem($params);
+        var_dump($result);
     }
 
     /**
