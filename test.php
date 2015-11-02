@@ -11,7 +11,6 @@ use Oasis\Mlib\AwsWrappers\DynamoDbItem;
 use Oasis\Mlib\AwsWrappers\DynamoDbTable;
 
 require_once __DIR__ . "/vendor/autoload.php";
-
 $config = [
     "profile" => "minhao",
     "region"  => "us-east-1",

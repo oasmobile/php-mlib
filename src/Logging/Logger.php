@@ -55,7 +55,7 @@ class Logger
                                 $errorLogLevel = self::WARNING,
                                 $errorTriggerLevel = self::ERROR)
     {
-        $datetime_format = "Ymd-His";
+        $datetime_format = "Ymd-His P";
         $output_format   = "[%channel%] %datetime% | %level_name% | %message% %context% %extra%\n";
         $line_formatter  = new LineFormatter(
             $output_format,
