@@ -124,7 +124,7 @@ class DynamoDbItem
             case self::ATTRIBUTE_TYPE_NULL:
                 return [$type => true];
                 break;
-            case self::ATTRIBUTE_TYPE_NUMBER:
+            case self::ATTRIBUTE_TYPE_NUMBER: {
                 if (!is_numeric($v)) {
                     return [$type => "0"];
                 }
@@ -134,6 +134,7 @@ class DynamoDbItem
                 else {
                     return [$type => strval(floatval($v))];
                 }
+            }
                 break;
             case self::ATTRIBUTE_TYPE_LIST:
             case self::ATTRIBUTE_TYPE_MAP: {
@@ -143,10 +144,19 @@ class DynamoDbItem
                 }
 
                 return [$type => $children];
-                break;
             }
-            default:
-                throw new \RuntimeException("Unknown type for dynamodb item, value = $v");
+                break;
+            default: {
+                $const_key = __CLASS__ . "::ATTRIBUTE_TYPE_" . strtoupper($type);
+                if (defined($const_key)) {
+                    $type = constant($const_key);
+
+                    return static::toTypedValue($v, $type);
+                }
+                else {
+                    throw new \RuntimeException("Unknown type for dynamodb item, value = $v");
+                }
+            }
         }
     }
 

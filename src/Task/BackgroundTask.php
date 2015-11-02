@@ -36,6 +36,7 @@ class BackgroundTask extends AbstractTask
         $this->isFailed = false;
 
         $runner = new BackgroundProcessRunner($this->task);
+        /** @noinspection PhpUnusedParameterInspection */
         $runner->addEventListener(
             BackgroundProcessRunner::EVENT_START,
             function (Event $e) {

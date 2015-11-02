@@ -8,6 +8,7 @@
 
 namespace Oasis\Mlib\Resources;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
 abstract class AbstractRedshiftResource extends AbstractResourcePoolBase
@@ -22,4 +23,15 @@ abstract class AbstractRedshiftResource extends AbstractResourcePoolBase
 
         return DriverManager::getConnection($connectionParams);
     }
+
+    /**
+     * @param string $key
+     *
+     * @return Connection
+     */
+    public function getResource($key = '')
+    {
+        return parent::getResource($key);
+    }
+
 }

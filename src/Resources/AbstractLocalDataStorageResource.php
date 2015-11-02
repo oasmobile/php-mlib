@@ -36,4 +36,15 @@ abstract class AbstractLocalDataStorageResource extends AbstractResourcePoolBase
 
         return $finder;
     }
+
+    /**
+     * @param string $key
+     *
+     * @return AppendableFilesystem
+     */
+    public function getResource($key = '')
+    {
+        return parent::getResource($key);
+    }
+
 }

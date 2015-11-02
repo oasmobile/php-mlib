@@ -28,6 +28,16 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
     /** @var array */
     protected $registeredWrappers = [];
 
+    /**
+     * @param string $key
+     *
+     * @return Filesystem
+     */
+    public function getResource($key = '')
+    {
+        return parent::getResource($key);
+    }
+
     public function createResource($key = '')
     {
         $config  = $this->getConfig($key);
