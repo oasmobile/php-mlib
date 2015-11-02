@@ -27,9 +27,6 @@ class DynamoDbItem
 
     public static function createFromTypedArray(array &$typed_value)
     {
-        if (!$typed_value) {
-            return null;
-        }
         $ret       = new static;
         $ret->data = $typed_value;
 

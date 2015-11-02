@@ -61,8 +61,9 @@ class DynamoDbTable
         }
 
         $result = $this->db_client->getItem($params);
-        $item   = DynamoDbItem::createFromTypedArray($result['Item']);
-        if ($item instanceof DynamoDbItem) {
+        if ($result['Item']) {
+            $item = DynamoDbItem::createFromTypedArray($result['Item']);
+
             return $item->toArray();
         }
         else {
