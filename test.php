@@ -11,6 +11,11 @@ use Oasis\Mlib\AwsWrappers\DynamoDbItem;
 use Oasis\Mlib\AwsWrappers\DynamoDbTable;
 
 require_once __DIR__ . "/vendor/autoload.php";
+
+set_exception_handler(function (Exception $e) {
+    mtrace($e, "Exception caught in the end");
+});
+
 $config = [
     "profile" => "minhao",
     "region"  => "us-east-1",
@@ -24,21 +29,24 @@ $types  = [
 ];
 
 $db = new DynamoDbTable($config, $table, $types);
-$db->setCasField("completed_at");
 
-//$obj = [
-//    "uuid"         => 123,
-//    "taskid"       => 11,
-//    "version"      => 1,
-//    "completed_at" => time(),
-//    "name"         => null,
-//    "is_student"   => true,
-//];
-//$db->set($obj);
+//$db->set(
+//    [
+//        "uuid"      => "123",
+//        "taskid"    => 2,
+//        "orig_uuid" => "jack",
+//    ]
+//);
+//$db->set(
+//    [
+//        "uuid"      => "124",
+//        "taskid"    => 4,
+//        "orig_uuid" => "rose",
+//    ]
+//);
 
-//$obj = $db->get(['uuid' => 123, 'taskid' => 11]);
-//$obj['name'] = "jason";
-//$obj['completed_at'] = time();
-//$db->set($obj, true);
-
-$db->delete(['uuid' => 123, 'taskid' => 77]);
+$db->scanAndRun(
+    function (array $item) {
+        var_dump($item);
+    }
+);

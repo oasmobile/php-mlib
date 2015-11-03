@@ -13,16 +13,7 @@ use Aws\DynamoDb\Exception\DynamoDbException;
 
 class DynamoDbTable
 {
-    const ATTRIBUTE_TYPE_STRING = 'S';
-    const ATTRIBUTE_TYPE_BINARY = 'B';
-    const ATTRIBUTE_TYPE_NUMBER = 'N';
-//    const ATTRIBUTE_TYPE_STRING_SET = 'SS';
-//    const ATTRIBUTE_TYPE_BINARY_SET = 'BS';
-//    const ATTRIBUTE_TYPE_NUMBER_SET = 'NS';
-    const ATTRIBUTE_TYPE_LIST = 'L';
-    const ATTRIBUTE_TYPE_MAP  = 'M';
-    const ATTRIBUTE_TYPE_BOOL = 'BOOL';
-    const ATTRIBUTE_TYPE_NULL = 'NULL';
+    const PRIMARY_INDEX = false;
 
     /** @var DynamoDbClient */
     protected $db_client;
@@ -49,18 +40,18 @@ class DynamoDbTable
         return $this;
     }
 
-    public function get($keys, $is_consistent_read = false)
+    public function get(array $keys, $is_consistent_read = false)
     {
-        $keyItem = DynamoDbItem::createFromArray($keys, $this->attribute_types);
-        $params  = [
+        $keyItem     = DynamoDbItem::createFromArray($keys, $this->attribute_types);
+        $requestArgs = [
             "TableName" => $this->table_name,
             "Key"       => $keyItem->getData(),
         ];
         if ($is_consistent_read) {
-            $params["ConsistentRead"] = true;
+            $requestArgs["ConsistentRead"] = true;
         }
 
-        $result = $this->db_client->getItem($params);
+        $result = $this->db_client->getItem($requestArgs);
         if ($result['Item']) {
             $item = DynamoDbItem::createFromTypedArray((array)$result['Item']);
 
@@ -71,9 +62,9 @@ class DynamoDbTable
         }
     }
 
-    public function set(array &$obj, $cas = false)
+    public function set(array $obj, $cas = false)
     {
-        $params = [
+        $requestArgs = [
             "TableName" => $this->table_name,
         ];
 
@@ -82,16 +73,16 @@ class DynamoDbTable
             $obj[$this->cas_field] = time();
 
             if ($old_cas && $cas) {
-                $params['ConditionExpression']       = "#CAS = :cas_val";
-                $params['ExpressionAttributeNames']  = ["#CAS" => $this->cas_field];
-                $params['ExpressionAttributeValues'] = [":cas_val" => ["N" => strval(intval($old_cas))]];
+                $requestArgs['ConditionExpression']       = "#CAS = :cas_val";
+                $requestArgs['ExpressionAttributeNames']  = ["#CAS" => $this->cas_field];
+                $requestArgs['ExpressionAttributeValues'] = [":cas_val" => ["N" => strval(intval($old_cas))]];
             }
         }
-        $item           = DynamoDbItem::createFromArray($obj, $this->attribute_types);
-        $params['Item'] = $item->getData();
+        $item                = DynamoDbItem::createFromArray($obj, $this->attribute_types);
+        $requestArgs['Item'] = $item->getData();
 
         try {
-            $this->db_client->putItem($params);
+            $this->db_client->putItem($requestArgs);
         } catch (DynamoDbException $e) {
             if ($e->getAwsErrorCode() == "ConditionalCheckFailedException") {
                 return false;
@@ -113,15 +104,125 @@ class DynamoDbTable
     {
         $keyItem = DynamoDbItem::createFromArray($keys, $this->attribute_types);
 
-        $params = [
+        $requestArgs = [
             "TableName" => $this->table_name,
             "Key"       => $keyItem->getData(),
         ];
 
-        $result = $this->db_client->deleteItem($params);
+        $result = $this->db_client->deleteItem($requestArgs);
         var_dump($result);
     }
 
+    public function query($conditions,
+                          array $fields,
+                          array $params,
+                          $index_name = self::PRIMARY_INDEX,
+                          &$last_key = null,
+                          $page_limit = 30,
+                          $consistent_read = false)
+    {
+        $paramsItem = DynamoDbItem::createFromArray($params);
+
+        $requestArgs = [
+            "TableName"                 => $this->table_name,
+            "KeyConditionExpression"    => $conditions,
+            "ConsistentRead"            => $consistent_read,
+            "ExpressionAttributeNames"  => $fields,
+            "ExpressionAttributeValues" => $paramsItem->getData(),
+        ];
+        if ($index_name != self::PRIMARY_INDEX) {
+            $requestArgs['IndexName'] = $index_name;
+        }
+        if ($last_key) {
+            $requestArgs['ExclusiveStartKey'] = $last_key;
+        }
+        if ($page_limit) {
+            $requestArgs['Limit'] = $page_limit;
+        }
+        var_dump($requestArgs);
+
+        $result   = $this->db_client->query($requestArgs);
+        $last_key = $result['LastEvaluatedKey'];
+        $items    = $result['Items'];
+
+        $ret = [];
+        foreach ($items as $itemArray) {
+            $item  = DynamoDbItem::createFromTypedArray($itemArray);
+            $ret[] = $item->toArray();
+        }
+
+        return $ret;
+    }
+
+    public function queryAndRun(callable $callback,
+                                $conditions,
+                                array $fields,
+                                array $params,
+                                $index_name = self::PRIMARY_INDEX,
+                                $consistent_read = false)
+    {
+        $last_key = null;
+        do {
+            $items = $this->query($conditions, $fields, $params, $index_name, $last_key, 30, $consistent_read);
+            foreach ($items as $item) {
+                call_user_func($callback, $item);
+            }
+        } while ($last_key != null);
+    }
+
+    public function scan($conditions = '',
+                         array $fields = [],
+                         array $params = [],
+                         &$last_key = null,
+                         $page_limit = 30)
+    {
+        $requestArgs = [
+            "TableName" => $this->table_name,
+        ];
+        if ($conditions) {
+            $requestArgs['FilterExpression'] = $conditions;
+            if ($params) {
+                $paramsItem                               = DynamoDbItem::createFromArray($params);
+                $requestArgs['ExpressionAttributeValues'] = $paramsItem->getData();
+            }
+            if ($fields) {
+                $requestArgs['ExpressionAttributeNames'] = $fields;
+            }
+        }
+        if ($last_key) {
+            $requestArgs['ExclusiveStartKey'] = $last_key;
+        }
+        if ($page_limit) {
+            $requestArgs['Limit'] = $page_limit;
+        }
+
+        $result   = $this->db_client->scan($requestArgs);
+        $last_key = $result['LastEvaluatedKey'];
+        $items    = $result['Items'];
+
+        $ret = [];
+        foreach ($items as $itemArray) {
+            $item  = DynamoDbItem::createFromTypedArray($itemArray);
+            $ret[] = $item->toArray();
+        }
+
+        return $ret;
+    }
+
+    public function scanAndRun(callable $callback,
+                               $conditions = '',
+                               array $fields = [],
+                               array $params = [])
+    {
+        $last_key = null;
+        do {
+            $items = $this->scan($conditions, $fields, $params, $last_key, 30);
+            foreach ($items as $item) {
+                call_user_func($callback, $item);
+            }
+        } while ($last_key != null);
+    }
+    
     /**
      * @return string
      */
@@ -136,5 +237,13 @@ class DynamoDbTable
     public function setCasField($cas_field)
     {
         $this->cas_field = $cas_field;
+    }
+
+    /**
+     * @return DynamoDbClient
+     */
+    public function getDbClient()
+    {
+        return $this->db_client;
     }
 }

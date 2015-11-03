@@ -159,7 +159,10 @@ class DynamoDbItem
 
     protected static function determineAttributeType(&$v)
     {
-        if (is_numeric($v)) {
+        if (is_string($v)) {
+            return self::ATTRIBUTE_TYPE_STRING;
+        }
+        if (is_int($v) || is_float($v)) {
             return self::ATTRIBUTE_TYPE_NUMBER;
         }
         elseif (is_bool($v)) {
@@ -181,7 +184,7 @@ class DynamoDbItem
             return self::ATTRIBUTE_TYPE_LIST;
         }
         else {
-            return self::ATTRIBUTE_TYPE_STRING;
+            throw new InvalidDataTypeException("Cannot determine type of attribute: " . print_r($v, true));
         }
     }
 
