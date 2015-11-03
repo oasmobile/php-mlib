@@ -62,7 +62,7 @@ class DynamoDbTable
 
         $result = $this->db_client->getItem($params);
         if ($result['Item']) {
-            $item = DynamoDbItem::createFromTypedArray($result['Item']);
+            $item = DynamoDbItem::createFromTypedArray((array)$result['Item']);
 
             return $item->toArray();
         }

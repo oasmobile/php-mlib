@@ -25,7 +25,7 @@ class DynamoDbItem
 
     protected $data = [];
 
-    public static function createFromTypedArray(array &$typed_value)
+    public static function createFromTypedArray(array $typed_value)
     {
         $ret       = new static;
         $ret->data = $typed_value;
@@ -33,10 +33,10 @@ class DynamoDbItem
         return $ret;
     }
 
-    public static function createFromArray(array &$normal_value, $known_types = [])
+    public static function createFromArray(array $normal_value, $known_types = [])
     {
         $ret = new static;
-        foreach ($normal_value as $k => $v) {
+        foreach ($normal_value as $k => &$v) {
             $ret->data[$k] = static::toTypedValue($v, $known_types[$k]);
         }
 
