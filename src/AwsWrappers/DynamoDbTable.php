@@ -109,8 +109,7 @@ class DynamoDbTable
             "Key"       => $keyItem->getData(),
         ];
 
-        $result = $this->db_client->deleteItem($requestArgs);
-        var_dump($result);
+        $this->db_client->deleteItem($requestArgs);
     }
 
     public function query($conditions,
@@ -139,7 +138,6 @@ class DynamoDbTable
         if ($page_limit) {
             $requestArgs['Limit'] = $page_limit;
         }
-        var_dump($requestArgs);
 
         $result   = $this->db_client->query($requestArgs);
         $last_key = $result['LastEvaluatedKey'];
@@ -222,7 +220,7 @@ class DynamoDbTable
             }
         } while ($last_key != null);
     }
-    
+
     /**
      * @return string
      */
