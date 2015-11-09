@@ -7,46 +7,18 @@
  * Time: 16:22
  */
 
-use Oasis\Mlib\AwsWrappers\DynamoDbItem;
-use Oasis\Mlib\AwsWrappers\DynamoDbTable;
+use Oasis\Mlib\Cli\MemoryMonitor;
 
-require_once __DIR__ . "/vendor/autoload.php";
-
-set_exception_handler(function (Exception $e) {
-    mtrace($e, "Exception caught in the end");
-});
-
-$config = [
-    "profile" => "minhao",
-    "region"  => "us-east-1",
-    "version" => "latest",
-];
-$table  = "egg-user-task-info";
-$types  = [
-    "uuid"         => DynamoDbItem::ATTRIBUTE_TYPE_STRING,
-    "taskid"       => DynamoDbItem::ATTRIBUTE_TYPE_NUMBER,
-    "completed_at" => DynamoDbItem::ATTRIBUTE_TYPE_NUMBER,
-];
-
-$db = new DynamoDbTable($config, $table, $types);
-
-//$db->set(
-//    [
-//        "uuid"      => "123",
-//        "taskid"    => 2,
-//        "orig_uuid" => "jack",
-//    ]
-//);
-//$db->set(
-//    [
-//        "uuid"      => "124",
-//        "taskid"    => 4,
-//        "orig_uuid" => "rose",
-//    ]
-//);
-
-$db->scanAndRun(
-    function (array $item) {
-        var_dump($item);
+require_once "bootstrap.php";
+set_exception_handler(
+    function (Exception $e) {
+        mtrace($e, "Exception caught in the end");
     }
 );
+$a = '';
+for ($i = 0; $i < 1000; ++$i) {
+
+    for ($j = 0; $j < 500; ++$j) {
+        func($a, $i, $j);
+    }
+}
