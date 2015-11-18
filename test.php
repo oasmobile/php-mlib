@@ -7,24 +7,25 @@
  * Time: 16:22
  */
 
-use Oasis\Mlib\DevTools\SimpleProfiler;
-
 require_once "bootstrap.php";
-set_exception_handler(
-    function (Exception $e) {
-        mtrace($e, "Exception caught in the end");
-    }
+
+$table = new \Oasis\Mlib\AwsWrappers\DynamoDbTable(
+    [
+        "profile" => "egg-user",
+        "region"  => "us-east-1",
+        "version" => "latest",
+    ],
+    "egg-user-task-info",
+    [
+        "uuid"   => "string",
+        "taskid" => "number",
+    ]
+);
+$c = $table->count(
+    "#taskid = :taskid",
+    ["#taskid" => "taskid"],
+    [":taskid" => 7]
+    ,"taskid-index"
 );
 
-$a = '';
-for ($i = 0; $i < 30; ++$i) {
-    SimpleProfiler::start();
-    for ($j = 0; $j < 500; ++$j) {
-        SimpleProfiler::start();
-        usleep(10);
-        SimpleProfiler::end();
-    }
-    SimpleProfiler::end();
-}
-
-var_dump(SimpleProfiler::getStats());
+mdebug($c);

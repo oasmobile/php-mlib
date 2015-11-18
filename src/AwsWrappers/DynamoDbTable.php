@@ -14,6 +14,7 @@ use Aws\DynamoDb\Exception\DynamoDbException;
 class DynamoDbTable
 {
     const PRIMARY_INDEX = false;
+    const NO_INDEX      = null;
 
     /** @var DynamoDbClient */
     protected $db_client;
@@ -112,6 +113,56 @@ class DynamoDbTable
         $this->db_client->deleteItem($requestArgs);
     }
 
+    public function count($conditions,
+                          array $fields,
+                          array $params,
+                          $index_name = self::NO_INDEX,
+                          $consistent_read = false)
+    {
+        $usingScan   = ($index_name === self::NO_INDEX);
+        $command     = $usingScan ? "scan" : "query";
+        $requestArgs = [
+            "TableName" => $this->table_name,
+            "Select"    => "COUNT",
+        ];
+        if ($conditions) {
+            $conditionKey               = $usingScan ? "FilterExpression" : "KeyConditionExpression";
+            $requestArgs[$conditionKey] = $conditions;
+
+            if ($fields) {
+                $requestArgs['ExpressionAttributeNames'] = $fields;
+            }
+            if ($params) {
+                $paramsItem                               = DynamoDbItem::createFromArray($params);
+                $requestArgs['ExpressionAttributeValues'] = $paramsItem->getData();
+            }
+        }
+        if (!$usingScan) {
+            $requestArgs['ConsistentRead'] = $consistent_read;
+            if ($index_name !== self::PRIMARY_INDEX) {
+                $requestArgs['IndexName'] = $index_name;
+            }
+        }
+
+        $count   = 0;
+        $scanned = 0;
+
+        $last_key = null;
+        do {
+            if ($last_key) {
+                $requestArgs['ExclusiveStartKey'] = $last_key;
+            }
+            $result   = call_user_func([$this->db_client, $command], $requestArgs);
+            $last_key = $result['LastEvaluatedKey'];
+            $count += intval($result['Count']);
+            $scanned += intval($result['ScannedCount']);
+        } while ($last_key != null);
+
+        mdebug("Count = $count from total scanned $scanned");
+
+        return $count;
+    }
+
     public function query($conditions,
                           array $fields,
                           array $params,
@@ -120,17 +171,28 @@ class DynamoDbTable
                           $page_limit = 30,
                           $consistent_read = false)
     {
-        $paramsItem = DynamoDbItem::createFromArray($params);
-
+        $usingScan   = ($index_name === self::NO_INDEX);
+        $command     = $usingScan ? "scan" : "query";
         $requestArgs = [
-            "TableName"                 => $this->table_name,
-            "KeyConditionExpression"    => $conditions,
-            "ConsistentRead"            => $consistent_read,
-            "ExpressionAttributeNames"  => $fields,
-            "ExpressionAttributeValues" => $paramsItem->getData(),
+            "TableName" => $this->table_name,
         ];
-        if ($index_name != self::PRIMARY_INDEX) {
-            $requestArgs['IndexName'] = $index_name;
+        if ($conditions) {
+            $conditionKey               = $usingScan ? "FilterExpression" : "KeyConditionExpression";
+            $requestArgs[$conditionKey] = $conditions;
+
+            if ($fields) {
+                $requestArgs['ExpressionAttributeNames'] = $fields;
+            }
+            if ($params) {
+                $paramsItem                               = DynamoDbItem::createFromArray($params);
+                $requestArgs['ExpressionAttributeValues'] = $paramsItem->getData();
+            }
+        }
+        if (!$usingScan) {
+            $requestArgs['ConsistentRead'] = $consistent_read;
+            if ($index_name !== self::PRIMARY_INDEX) {
+                $requestArgs['IndexName'] = $index_name;
+            }
         }
         if ($last_key) {
             $requestArgs['ExclusiveStartKey'] = $last_key;
@@ -139,7 +201,7 @@ class DynamoDbTable
             $requestArgs['Limit'] = $page_limit;
         }
 
-        $result   = $this->db_client->query($requestArgs);
+        $result   = call_user_func([$this->db_client, $command], $requestArgs);
         $last_key = $result['LastEvaluatedKey'];
         $items    = $result['Items'];
 
@@ -174,37 +236,7 @@ class DynamoDbTable
                          &$last_key = null,
                          $page_limit = 30)
     {
-        $requestArgs = [
-            "TableName" => $this->table_name,
-        ];
-        if ($conditions) {
-            $requestArgs['FilterExpression'] = $conditions;
-            if ($params) {
-                $paramsItem                               = DynamoDbItem::createFromArray($params);
-                $requestArgs['ExpressionAttributeValues'] = $paramsItem->getData();
-            }
-            if ($fields) {
-                $requestArgs['ExpressionAttributeNames'] = $fields;
-            }
-        }
-        if ($last_key) {
-            $requestArgs['ExclusiveStartKey'] = $last_key;
-        }
-        if ($page_limit) {
-            $requestArgs['Limit'] = $page_limit;
-        }
-
-        $result   = $this->db_client->scan($requestArgs);
-        $last_key = $result['LastEvaluatedKey'];
-        $items    = $result['Items'];
-
-        $ret = [];
-        foreach ($items as $itemArray) {
-            $item  = DynamoDbItem::createFromTypedArray($itemArray);
-            $ret[] = $item->toArray();
-        }
-
-        return $ret;
+        return $this->query($conditions, $fields, $params, self::NO_INDEX, $last_key, $page_limit);
     }
 
     public function scanAndRun(callable $callback,
@@ -212,13 +244,7 @@ class DynamoDbTable
                                array $fields = [],
                                array $params = [])
     {
-        $last_key = null;
-        do {
-            $items = $this->scan($conditions, $fields, $params, $last_key, 30);
-            foreach ($items as $item) {
-                call_user_func($callback, $item);
-            }
-        } while ($last_key != null);
+        $this->queryAndRun($callback, $conditions, $fields, $params, self::NO_INDEX);
     }
 
     /**
