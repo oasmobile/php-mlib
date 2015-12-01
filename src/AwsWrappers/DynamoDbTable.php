@@ -10,6 +10,7 @@ namespace Oasis\Mlib\AwsWrappers;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
+use Oasis\Mlib\Exceptions\Runtime\InvalidRequestDataException;
 
 class DynamoDbTable
 {
@@ -32,6 +33,79 @@ class DynamoDbTable
         $this->table_name      = $table_name;
         $this->attribute_types = $attribute_types;
         $this->cas_field       = $cas_field;
+    }
+
+    public function describe()
+    {
+        $requestArgs = [
+            "TableName" => $this->table_name,
+        ];
+        $result      = $this->db_client->describeTable($requestArgs);
+
+        return $result;
+    }
+
+    public function getThroughput($indexName = self::PRIMARY_INDEX)
+    {
+        $result = $this->describe();
+        if ($indexName == self::PRIMARY_INDEX) {
+            return [
+                $result['Table']['ProvisionedThroughput']['ReadCapacityUnits'],
+                $result['Table']['ProvisionedThroughput']['WriteCapacityUnits'],
+            ];
+        }
+        else {
+            foreach ($result['Table']['GlobalSecondaryIndexes'] as $gsi) {
+                if ($gsi['IndexName'] != $indexName) {
+                    continue;
+                }
+
+                return [
+                    $gsi['ProvisionedThroughput']['ReadCapacityUnits'],
+                    $gsi['ProvisionedThroughput']['WriteCapacityUnits'],
+                ];
+            }
+        }
+
+        throw new InvalidRequestDataException("Cannot find index named $indexName");
+    }
+
+    public function setThroughput($read, $write, $indexName = self::PRIMARY_INDEX)
+    {
+        $requestArgs  = [
+            "TableName" => $this->table_name,
+        ];
+        $updateObject = [
+            'ReadCapacityUnits'  => $read,
+            'WriteCapacityUnits' => $write,
+        ];
+        if ($indexName == self::PRIMARY_INDEX) {
+            $requestArgs['ProvisionedThroughput'] = $updateObject;
+        }
+        else {
+            $requestArgs['GlobalSecondaryIndexUpdates'] = [
+                [
+                    'Update' => [
+                        'IndexName'             => $indexName,
+                        'ProvisionedThroughput' => $updateObject,
+                    ],
+                ],
+            ];
+        }
+
+        try {
+            $this->db_client->updateTable($requestArgs);
+        } catch (DynamoDbException $e) {
+            if ($e->getAwsErrorCode() == "ValidationException"
+                && $e->getAwsErrorType() == "client"
+                && !$e->isConnectionError()
+            ) {
+                mwarning("Throughput not updated, because new value is identical to old value!");
+            }
+            else {
+                throw $e;
+            }
+        }
     }
 
     public function setAttributeType($name, $type)
