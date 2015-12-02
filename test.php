@@ -8,24 +8,19 @@
  */
 
 require_once "bootstrap.php";
+ini_set('xdebug.var_display_max_depth', 5);
 
-$table = new \Oasis\Mlib\AwsWrappers\DynamoDbTable(
+$table  = new \Oasis\Mlib\AwsWrappers\DynamoDbTable(
     [
-        "profile" => "egg-user",
+        "profile" => "minhao",
         "region"  => "us-east-1",
-        "version" => "latest",
     ],
-    "egg-user-task-info",
-    [
-        "uuid"   => "string",
-        "taskid" => "number",
-    ]
+    "egg-user-task-info"
 );
-$c = $table->count(
-    "#taskid = :taskid",
-    ["#taskid" => "taskid"],
-    [":taskid" => 7]
-    ,"taskid-index"
-);
-
-mdebug($c);
+$result = $table->getConsumedCapacity("taskid-index");
+var_dump($result);
+$result = $table->getThroughput("taskid-index");
+var_dump($result);
+$table->setThroughput(50, 50, "taskid-index");
+$result = $table->getThroughput("taskid-index");
+var_dump($result);

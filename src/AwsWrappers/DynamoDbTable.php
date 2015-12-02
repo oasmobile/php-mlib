@@ -8,6 +8,7 @@
 
 namespace Oasis\Mlib\AwsWrappers;
 
+use Aws\CloudWatch\CloudWatchClient;
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
 use Oasis\Mlib\Exceptions\Runtime\InvalidRequestDataException;
@@ -28,6 +29,9 @@ class DynamoDbTable
 
     function __construct(array $aws_config, $table_name, $attribute_types = [], $cas_field = '')
     {
+        if (!isset($aws_config['version'])) {
+            $aws_config['version'] = "2012-08-10";
+        }
         $this->config          = $aws_config;
         $this->db_client       = new DynamoDbClient($this->config);
         $this->table_name      = $table_name;
@@ -43,6 +47,66 @@ class DynamoDbTable
         $result      = $this->db_client->describeTable($requestArgs);
 
         return $result;
+    }
+
+    public function getConsumedCapacity($indexName = self::PRIMARY_INDEX)
+    {
+        $cloudwatch  = new CloudWatchClient(
+            [
+                "profile" => $this->config['profile'],
+                "region"  => $this->config['region'],
+                "version" => "2010-08-01",
+            ]
+        );
+        $now         = time() - (time() % 60);
+        $requestArgs = [
+            "Namespace"  => "AWS/DynamoDB",
+            "Dimensions" => [
+                [
+                    "Name"  => "TableName",
+                    "Value" => $this->table_name,
+                ],
+                //[
+                //    "Name"  => "Operation",
+                //    "Value" => "GetItem",
+                //],
+            ],
+            "MetricName" => "ConsumedReadCapacityUnits",
+            "StartTime"  => date('c', $now - 600),
+            "EndTime"    => date('c', $now - 300),
+            "Period"     => 60,
+            "Statistics" => ["Sum"],
+        ];
+        if ($indexName != self::PRIMARY_INDEX) {
+            $requestArgs['Dimensions'][] = [
+                "Name"  => "GlobalSecondaryIndexName",
+                "Value" => $indexName,
+            ];
+        }
+
+        $result      = $cloudwatch->getMetricStatistics($requestArgs);
+        $total_read  = 0;
+        $total_count = 0;
+        foreach ($result['Datapoints'] as $data) {
+            $total_count++;
+            $total_read += $data['Sum'];
+        }
+        $readUsed = $total_count ? ($total_read / $total_count / 60) : 0;
+
+        $requestArgs['MetricName'] = 'ConsumedWriteCapacityUnits';
+        $result                    = $cloudwatch->getMetricStatistics($requestArgs);
+        $total_write               = 0;
+        $total_count               = 0;
+        foreach ($result['Datapoints'] as $data) {
+            $total_count++;
+            $total_write += $data['Sum'];
+        }
+        $writeUsed = $total_count ? ($total_write / $total_count / 60) : 0;
+        
+        return [
+            $readUsed,
+            $writeUsed,
+        ];
     }
 
     public function getThroughput($indexName = self::PRIMARY_INDEX)
