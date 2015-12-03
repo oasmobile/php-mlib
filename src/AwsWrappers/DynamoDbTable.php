@@ -49,16 +49,23 @@ class DynamoDbTable
         return $result;
     }
 
-    public function getConsumedCapacity($indexName = self::PRIMARY_INDEX)
+    public function getConsumedCapacity($indexName = self::PRIMARY_INDEX,
+                                        $period = 60,
+                                        $num_of_period = 5,
+                                        $timeshift = -300)
     {
-        $cloudwatch  = new CloudWatchClient(
+        $cloudwatch = new CloudWatchClient(
             [
                 "profile" => $this->config['profile'],
                 "region"  => $this->config['region'],
                 "version" => "2010-08-01",
             ]
         );
-        $now         = time() - (time() % 60);
+
+        $end = time() + $timeshift;
+        $end -= $end % $period;
+        $start = $end - $num_of_period * $period;
+
         $requestArgs = [
             "Namespace"  => "AWS/DynamoDB",
             "Dimensions" => [
@@ -72,8 +79,8 @@ class DynamoDbTable
                 //],
             ],
             "MetricName" => "ConsumedReadCapacityUnits",
-            "StartTime"  => date('c', $now - 600),
-            "EndTime"    => date('c', $now - 300),
+            "StartTime"  => date('c', $start),
+            "EndTime"    => date('c', $end),
             "Period"     => 60,
             "Statistics" => ["Sum"],
         ];

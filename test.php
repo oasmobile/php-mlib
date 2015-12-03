@@ -7,20 +7,25 @@
  * Time: 16:22
  */
 
+use Oasis\Mlib\AwsWrappers\DynamoDbTable;
+
 require_once "bootstrap.php";
 ini_set('xdebug.var_display_max_depth', 5);
 
-$table  = new \Oasis\Mlib\AwsWrappers\DynamoDbTable(
+$table  = new DynamoDbTable(
     [
         "profile" => "minhao",
-        "region"  => "us-east-1",
+        "region"  => "us-west-2",
     ],
-    "egg-user-task-info"
+    "mdata_users"
 );
-$result = $table->getConsumedCapacity("taskid-index");
+$result = $table->getConsumedCapacity(DynamoDbTable::PRIMARY_INDEX,
+    1800,
+    24);
 var_dump($result);
-$result = $table->getThroughput("taskid-index");
-var_dump($result);
-$table->setThroughput(50, 50, "taskid-index");
-$result = $table->getThroughput("taskid-index");
-var_dump($result);
+
+//$result = $table->getThroughput("taskid-index");
+//var_dump($result);
+//$table->setThroughput(50, 50, "taskid-index");
+//$result = $table->getThroughput("taskid-index");
+//var_dump($result);
