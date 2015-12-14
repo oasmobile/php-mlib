@@ -24,10 +24,16 @@ class Utilities
             "\\|",
         ];
 
-        $line = '';
+        $line      = '';
+        $not_first = false;
         foreach ($fields as $k) {
-            if ($line !== '') $line .= "|";
-
+            if ($not_first) {
+                $line .= "|";
+            }
+            else {
+                $not_first = true;
+            }
+            
             $v = $obj->$k;
             $v = preg_replace($patterns, $replacements, $v);
             $line .= $v;
