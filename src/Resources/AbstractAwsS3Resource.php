@@ -88,14 +88,16 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
             || !$this->credentials[$key]['expireAt']
             || $this->credentials[$key]['expireAt'] < $minExpireAt->getTimestamp()
         ) {
-            $sts    = new StsClient($this->getConfig($key));
-            $cmd    = $sts->getCommand(
+            $sts_config            = $this->getConfig($key);
+            $sts_config['version'] = "2011-06-15";
+            $sts                   = new StsClient($sts_config);
+            $cmd                   = $sts->getCommand(
                 "GetSessionToken",
                 [
                     "DurationSeconds" => 8 * 3600,
                 ]
             );
-            $result = $sts->execute($cmd);
+            $result                = $sts->execute($cmd);
 
             $this->credentials[$key] = [
                 "Credentials" => $result['Credentials'],
