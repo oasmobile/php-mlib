@@ -152,6 +152,49 @@ class SqsQueue
         );
     }
 
+    public function deleteMessages($messages)
+    {
+        $buffer = [];
+        /** @var SqsReceivedMessage $msg */
+        foreach ($messages as $msg) {
+            $buffer[] = $msg;
+            if (count($buffer) >= 10) {
+
+                $entries = [];
+                /** @var SqsReceivedMessage $bmsg */
+                foreach ($buffer as $idx => $bmsg) {
+                    $entries[] = [
+                        "Id"            => "buf_$idx",
+                        "ReceiptHandle" => $msg->getReceiptHandle(),
+                    ];
+                }
+                $this->client->deleteMessageBatch(
+                    [
+                        "QueueUrl" => $this->getQueueUrl(),
+                        "Entries"  => $entries,
+                    ]
+                );
+                $buffer = [];
+            }
+        }
+        if ($buffer) {
+            $entries = [];
+            /** @var SqsReceivedMessage $bmsg */
+            foreach ($buffer as $idx => $bmsg) {
+                $entries[] = [
+                    "Id"            => "buf_$idx",
+                    "ReceiptHandle" => $msg->getReceiptHandle(),
+                ];
+            }
+            $this->client->deleteMessageBatch(
+                [
+                    "QueueUrl" => $this->getQueueUrl(),
+                    "Entries"  => $entries,
+                ]
+            );
+        }
+    }
+
     public function getQueueUrl()
     {
         if (!$this->url) {
