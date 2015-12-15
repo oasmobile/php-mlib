@@ -32,15 +32,18 @@ trait EventDispatcherTrait
         $this->eventParent = $parent;
     }
 
-    public function dispatch($event)
+    public function dispatch($event, $context = null)
     {
         if (!$event instanceof Event) {
-            $event = new Event(strval($event));
+            $event = new Event(strval($event), $context);
+        }
+        if ($context) {
+            $event->setContext($context);
         }
 
-        if ($this->delegateDispatcher instanceof EventDispatcherInterface)
-        {
+        if ($this->delegateDispatcher instanceof EventDispatcherInterface) {
             $this->delegateDispatcher->dispatch($event);
+
             return;
         }
 

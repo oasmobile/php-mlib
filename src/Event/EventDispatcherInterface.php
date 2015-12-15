@@ -24,10 +24,11 @@ interface EventDispatcherInterface
      * Dispatches a event
      *
      * @param Event|string $event
+     * @param mixed        $context
      *
      * @return mixed
      */
-    public function dispatch($event);
+    public function dispatch($event, $context = null);
 
     public function addEventListener($name, callable $listener, $priority = 0);
 

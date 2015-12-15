@@ -150,4 +150,12 @@ class Event
         return $this->cancelled;
     }
 
+    /**
+     * @param mixed|null $context
+     */
+    public function setContext($context)
+    {
+        $this->context = $context;
+    }
+
 }
