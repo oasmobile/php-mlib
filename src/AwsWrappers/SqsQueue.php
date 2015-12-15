@@ -9,9 +9,18 @@
 namespace Oasis\Mlib\AwsWrappers;
 
 use Aws\Sqs\SqsClient;
+use Oasis\Mlib\Event\EventDispatcherInterface;
+use Oasis\Mlib\Event\EventDispatcherTrait;
+use Oasis\Mlib\Exceptions\Runtime\InvalidRequestDataException;
 
-class SqsQueue
+class SqsQueue implements EventDispatcherInterface
 {
+    use EventDispatcherTrait;
+
+    const SEND_PROGRESS   = "send_progress";
+    const READ_PROGRESS   = "read_progress";
+    const DELETE_PROGRESS = "delete_progress";
+
     /** @var SqsClient */
     protected $client;
     protected $config;
@@ -20,6 +29,9 @@ class SqsQueue
 
     function __construct($aws_config, $name)
     {
+        if (!isset($aws_config['version'])) {
+            $aws_config['version'] = '2012-11-05';
+        }
         $this->client = new SqsClient($aws_config);
         $this->config = $aws_config;
         $this->name   = $name;
@@ -47,6 +59,70 @@ class SqsQueue
         return $sent_msg;
     }
 
+    public function sendMessages(array $payrolls, $delay = 0, array $attributes_list = [])
+    {
+        if ($attributes_list && count($payrolls) != count($attributes_list)) {
+            throw new InvalidRequestDataException("Attribute list size is different than num of payrolls!");
+        }
+
+        $total = count($payrolls);
+
+        $buffer              = [];
+        $buffered_attributes = [];
+        while (count($payrolls) > 0) {
+            $buffer[] = array_pop($payrolls);
+            if ($attributes_list) {
+                $buffered_attributes[] = array_pop($attributes_list);
+            }
+            if (count($buffer) == 10) {
+                $this->sendMessageBatch($buffer, $buffered_attributes, $delay);
+                $this->dispatch(self::SEND_PROGRESS, (1 - count($payrolls) / $total));
+                $buffer = $buffered_attributes = [];
+            }
+        }
+        if (count($buffer) > 0) {
+            $this->sendMessageBatch($buffer, $buffered_attributes, $delay);
+            $this->dispatch(self::SEND_PROGRESS, 1);
+        }
+    }
+
+    protected function sendMessageBatch(array $payrolls, array $attributes, $delay)
+    {
+        $entries = [];
+        foreach ($payrolls as $idx => $payroll) {
+            $entry = [
+                "Id"          => "buf_$idx",
+                "MessageBody" => $payroll,
+            ];
+            if ($delay) {
+                $entry['DelaySeconds'] = $delay;
+            }
+            if ($attributes) {
+                $entry['MessageAttributes'] = $attributes[$idx];
+            }
+            $entries[] = $entry;
+        }
+        $args   = [
+            "QueueUrl" => $this->getQueueUrl(),
+            "Entries"  => $entries,
+        ];
+        $result = $this->client->sendMessageBatch($args);
+        if ($result['Failed']) {
+            foreach ($result['Failed'] as $failed) {
+                mwarning(
+                    sprintf(
+                        "Batch sending message failed, code = %s, id = %s, msg = %s, senderfault = %s",
+                        $failed['Code'],
+                        $failed['Id'],
+                        $failed['Message'],
+                        $failed['SenderFault']
+                    )
+                );
+            }
+            throw new \RuntimeException("Cannot send some messages, consult log for more info!");
+        }
+    }
+
     /**
      * @param int   $wait
      * @param int   $visibility_timeout
@@ -57,7 +133,7 @@ class SqsQueue
      */
     public function receiveMessage($wait = null, $visibility_timeout = null, $metas = [], $message_attributes = [])
     {
-        $ret = $this->receiveMessages(1, $wait, $visibility_timeout, $metas, $message_attributes);
+        $ret = $this->receiveMessageBatch(1, $wait, $visibility_timeout, $metas, $message_attributes);
         if (!$ret) {
             return null;
         }
@@ -71,15 +147,58 @@ class SqsQueue
      * @param int   $wait
      * @param int   $visibility_timeout
      * @param array $metas
+     *
      * @param array $message_attributes
      *
      * @return SqsReceivedMessage[]
      */
-    public function receiveMessages($max_count = 1,
+    public function receiveMessages($max_count,
                                     $wait = null,
                                     $visibility_timeout = null,
                                     $metas = [],
                                     $message_attributes = [])
+    {
+        if ($max_count <= 0) {
+            return [];
+        }
+
+        $buffer    = [];
+        $one_batch = 10;
+        while ($msgs = $this->receiveMessageBatch(
+            $one_batch,
+            $wait,
+            $visibility_timeout,
+            $metas,
+            $message_attributes
+        )) {
+            $buffer = array_merge($buffer, $msgs);
+            $this->dispatch(self::READ_PROGRESS, count($buffer) / $max_count);
+            if (count($msgs) < 10) {
+                break;
+            }
+            $one_batch = min(10, $max_count - count($buffer));
+            if ($one_batch <= 0) {
+                break;
+            }
+        }
+
+        return $buffer;
+    }
+
+    /**
+     * @param int   $max_count
+     * @param int   $wait
+     * @param int   $visibility_timeout
+     * @param array $metas
+     * @param array $message_attributes
+     *
+     * @return SqsReceivedMessage[]
+     */
+    protected function receiveMessageBatch($max_count = 1,
+                                           $wait = null,
+                                           $visibility_timeout = null,
+                                           $metas = [],
+                                           $message_attributes = [])
     {
         if ($max_count > 10 || $max_count < 1) {
             throw new \InvalidArgumentException("Max count for SQS message receiving is 10");
@@ -154,44 +273,58 @@ class SqsQueue
 
     public function deleteMessages($messages)
     {
-        $buffer = [];
+        $total = count($messages);
+        if (!$total) {
+            return;
+        }
+
+        $deleted = 0;
+        $buffer  = [];
         /** @var SqsReceivedMessage $msg */
         foreach ($messages as $msg) {
             $buffer[] = $msg;
             if (count($buffer) >= 10) {
-
-                $entries = [];
-                /** @var SqsReceivedMessage $bmsg */
-                foreach ($buffer as $idx => $bmsg) {
-                    $entries[] = [
-                        "Id"            => "buf_$idx",
-                        "ReceiptHandle" => $msg->getReceiptHandle(),
-                    ];
-                }
-                $this->client->deleteMessageBatch(
-                    [
-                        "QueueUrl" => $this->getQueueUrl(),
-                        "Entries"  => $entries,
-                    ]
-                );
+                $this->deleteMessageBatch($buffer);
+                $deleted += 10;
+                $this->dispatch(self::DELETE_PROGRESS, $deleted / $total);
                 $buffer = [];
             }
         }
         if ($buffer) {
-            $entries = [];
-            /** @var SqsReceivedMessage $bmsg */
-            foreach ($buffer as $idx => $bmsg) {
-                $entries[] = [
-                    "Id"            => "buf_$idx",
-                    "ReceiptHandle" => $msg->getReceiptHandle(),
-                ];
+            $this->deleteMessageBatch($buffer);
+            $this->dispatch(self::DELETE_PROGRESS, 1);
+        }
+    }
+
+    protected function deleteMessageBatch($msgs)
+    {
+        $entries = [];
+        /** @var SqsReceivedMessage $bmsg */
+        foreach ($msgs as $idx => $bmsg) {
+            $entries[] = [
+                "Id"            => "buf_$idx",
+                "ReceiptHandle" => $bmsg->getReceiptHandle(),
+            ];
+        }
+        $result = $this->client->deleteMessageBatch(
+            [
+                "QueueUrl" => $this->getQueueUrl(),
+                "Entries"  => $entries,
+            ]
+        );
+        if ($result['Failed']) {
+            foreach ($result['Failed'] as $failed) {
+                mwarning(
+                    sprintf(
+                        "Deleting message failed, code = %s, id = %s, msg = %s, senderfault = %s",
+                        $failed['Code'],
+                        $failed['Id'],
+                        $failed['Message'],
+                        $failed['SenderFault']
+                    )
+                );
             }
-            $this->client->deleteMessageBatch(
-                [
-                    "QueueUrl" => $this->getQueueUrl(),
-                    "Entries"  => $entries,
-                ]
-            );
+            throw new \RuntimeException("Cannot delete some messages, consult log for more info!");
         }
     }
 
