@@ -9,6 +9,7 @@
 namespace Oasis\Mlib\Task;
 
 use Oasis\Mlib\Data\DataPacker;
+use Oasis\Mlib\Event\Event;
 use Oasis\Mlib\Event\EventDispatcherInterface;
 use Oasis\Mlib\Event\EventDispatcherTrait;
 
@@ -53,8 +54,7 @@ class InterProcessEventDelegator implements EventDispatcherInterface
 
     public function poll()
     {
-        while ($evt = $this->receive())
-        {
+        while ($evt = $this->receive()) {
             //mdebug("Object got in poll: " . mdump($evt));
             $this->runnable->dispatch($evt);
         }
@@ -82,8 +82,14 @@ class InterProcessEventDelegator implements EventDispatcherInterface
         $this->runnable->setDelegateDispatcher($this);
     }
 
-    public function dispatch($event)
+    public function dispatch($event, $context = null)
     {
+        if (!$event instanceof Event) {
+            $event = new Event(strval($event));
+        }
+        if ($context) {
+            $event->setContext($context);
+        }
         if ($this->isInChild) {
             $this->send($event);
         }
