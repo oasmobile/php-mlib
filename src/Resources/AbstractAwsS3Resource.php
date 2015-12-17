@@ -108,7 +108,7 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
         return $this->credentials[$key]['Credentials'];
     }
 
-    public function finder($key = '')
+    public function finder($key = '', $deeper_path = '')
     {
         static $count = 0;
         $count++;
@@ -124,12 +124,14 @@ abstract class AbstractAwsS3Resource extends AbstractResourcePoolBase
         /** @var FixedAwsS3Adapter $adapter */
         $adapter = $fs->getAdapter();
 
+        $path = $protocol . "://"
+                . $this->getConfig($key)['bucket'] . "/"
+                . $adapter->applyPathPrefix("");
+        if ($deeper_path) {
+            $path .= "/" . $deeper_path;
+        }
         $finder = new Finder();
-        $finder->in(
-            $protocol . "://"
-            . $this->getConfig($key)['bucket'] . "/"
-            . $adapter->applyPathPrefix("")
-        );
+        $finder->in($path);
 
         return $finder;
     }
